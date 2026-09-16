@@ -1,0 +1,167 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "city": "Delhi",
+    "event": "Yamuna River Historic Flood",
+    "year": 2023,
+    "month": "July",
+    "peak_water_level_meters": 208.66,
+    "danger_mark_meters": 205.33,
+    "disclaimer": "HISTORICAL REFERENCE DATA (DELHI - JULY 2023) • NOT FOR LIVE EMERGENCY USE"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "flood_jul11_monastery",
+      "properties": {
+        "name": "Monastery Market & Yamuna Bazar Lowlands",
+        "date": "2023-07-11",
+        "dates_active": ["2023-07-11", "2023-07-12", "2023-07-13", "2023-07-14", "2023-07-15"],
+        "water_level_m": 206.32,
+        "flood_stage": "danger_breached",
+        "severity": "high",
+        "description": "Initial overtopping of Yamuna banks into Monastery Market and Nigam Bodh Ghat area."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.2310, 28.6740],
+            [77.2370, 28.6750],
+            [77.2410, 28.6650],
+            [77.2360, 28.6620],
+            [77.2320, 28.6670],
+            [77.2310, 28.6740]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "flood_jul12_kashmere_gate",
+      "properties": {
+        "name": "Kashmere Gate ISBT & Ring Road Corridor",
+        "date": "2023-07-12",
+        "dates_active": ["2023-07-12", "2023-07-13", "2023-07-14"],
+        "water_level_m": 207.71,
+        "flood_stage": "historic_breach",
+        "severity": "critical",
+        "description": "Submergence of Ring Road from Majnu Ka Tilla through Kashmere Gate ISBT and Chandgiram Akhara."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.2250, 28.6830],
+            [77.2340, 28.6840],
+            [77.2380, 28.6710],
+            [77.2310, 28.6660],
+            [77.2260, 28.6750],
+            [77.2250, 28.6830]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "flood_jul12_wazirabad_wtp",
+      "properties": {
+        "name": "Wazirabad & Chandrawal WTP Zone",
+        "date": "2023-07-12",
+        "dates_active": ["2023-07-12", "2023-07-13", "2023-07-14", "2023-07-15"],
+        "water_level_m": 207.71,
+        "flood_stage": "infrastructure_outage",
+        "severity": "critical",
+        "description": "Inundation of pump rooms at Wazirabad Water Treatment Plant, halting municipal water supply."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.2250, 28.7170],
+            [77.2380, 28.7180],
+            [77.2360, 28.7050],
+            [77.2240, 28.7060],
+            [77.2250, 28.7170]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "flood_jul13_ito_breach",
+      "properties": {
+        "name": "ITO & Vikas Marg (Regulator #12 Breach)",
+        "date": "2023-07-13",
+        "dates_active": ["2023-07-13", "2023-07-14"],
+        "water_level_m": 208.66,
+        "flood_stage": "peak",
+        "severity": "critical",
+        "description": "Drain regulator #12 near WHO building collapsed. Backflow inundated ITO junction and Vikas Marg."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.2410, 28.6320],
+            [77.2530, 28.6330],
+            [77.2550, 28.6230],
+            [77.2440, 28.6210],
+            [77.2390, 28.6260],
+            [77.2410, 28.6320]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "flood_jul13_red_fort",
+      "properties": {
+        "name": "Red Fort & Salimgarh Ring Road",
+        "date": "2023-07-13",
+        "dates_active": ["2023-07-13", "2023-07-14"],
+        "water_level_m": 208.66,
+        "flood_stage": "peak",
+        "severity": "critical",
+        "description": "Ring road behind Red Fort submerged; floodwater entered moat and Salimgarh underpass."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.2380, 28.6600],
+            [77.2460, 28.6590],
+            [77.2470, 28.6490],
+            [77.2390, 28.6500],
+            [77.2380, 28.6600]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "flood_jul13_mayur_vihar",
+      "properties": {
+        "name": "Mayur Vihar & Geeta Colony Floodplain",
+        "date": "2023-07-13",
+        "dates_active": ["2023-07-12", "2023-07-13", "2023-07-14", "2023-07-15"],
+        "water_level_m": 208.66,
+        "flood_stage": "peak",
+        "severity": "high",
+        "description": "Yamuna floodplain submerged; water reaches Geeta Colony bridge ramp and Mayur Vihar pockets."
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [77.2650, 28.6380],
+            [77.2880, 28.6350],
+            [77.2920, 28.6080],
+            [77.2720, 28.6100],
+            [77.2650, 28.6380]
+          ]
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,303 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "city": "Delhi",
+    "dataset": "Arterial Road Network",
+    "disclaimer": "HISTORICAL REFERENCE DATA (DELHI - JULY 2023) • NOT FOR LIVE EMERGENCY USE"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "road_ring_kashmere_monastery",
+      "properties": {
+        "id": "road_ring_kashmere_monastery",
+        "name": "Mahatma Gandhi Ring Road (Kashmere Gate to Monastery)",
+        "source": "int_kashmere_gate",
+        "target": "int_monastery",
+        "type": "arterial",
+        "historical_status_peak": "submerged",
+        "distance_km": 1.2
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [77.2285, 28.6675],
+          [77.2315, 28.6700],
+          [77.2340, 28.6730]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road_ring_monastery_chandgiram",
+      "properties": {
+        "id": "road_ring_monastery_chandgiram",
+        "name": "Ring Road (Monastery to Chandgiram Akhara)",
+        "source": "int_monastery",
+        "target": "int_chandgiram",
+        "type": "arterial",
+        "historical_status_peak": "submerged",
+        "distance_km": 1.1
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [77.2340, 28.6730],
+          [77.2320, 28.6780],
+          [77.2290, 28.6800]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road_ring_kashmere_redfort",
+      "properties": {
+        "id": "road_ring_kashmere_redfort",
+        "name": "Ring Road (Kashmere Gate to Red Fort Bypass)",
+        "source": "int_kashmere_gate",
+        "target": "int_red_fort_north",
+        "type": "arterial",
+        "historical_status_peak": "submerged",
+        "distance_km": 1.4
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [77.2285, 28.6675],
+          [77.2350, 28.6640],
+          [77.2400, 28.6600]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road_ring_redfort_delhigate",
+      "properties": {
+        "id": "road_ring_redfort_delhigate",
+        "name": "Ring Road (Behind Red Fort to Delhi Gate)",
+        "source": "int_red_fort_north",
+        "target": "int_red_fort_south",
+        "type": "arterial",
+        "historical_status_peak": "submerged",
+        "distance_km": 1.3
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [77.2400, 28.6600],
+          [77.2420, 28.6550],
+          [77.2410, 28.6500]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road_ring_delhigate_ito",
+      "properties": {
+        "id": "road_ring_delhigate_ito",
+        "name": "Ring Road (Delhi Gate / Shanti Van to ITO)",
+        "source": "int_red_fort_south",
+        "target": "int_ito_junction",
+        "type": "arterial",
+        "historical_status_peak": "submerged",
+        "distance_km": 1.6
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [77.2410, 28.6500],
+          [77.2430, 28.6400],
+          [77.2440, 28.6290]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road_vikas_marg_ito",
+      "properties": {
+        "id": "road_vikas_marg_ito",
+        "name": "Vikas Marg (ITO Crossing)",
+        "source": "int_ito_junction",
+        "target": "int_mandi_house",
+        "type": "arterial",
+        "historical_status_peak": "blocked",
+        "distance_km": 1.4
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [77.2440, 28.6290],
+          [77.2390, 28.6280],
+          [77.2335, 28.6260]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road_jln_marg_delhigate_cp",
+      "properties": {
+        "id": "road_jln_marg_delhigate_cp",
+        "name": "Jawaharlal Nehru Marg (LNJP Hospital to Ajmeri Gate)",
+        "source": "int_delhi_gate",
+        "target": "int_new_delhi_station",
+        "type": "arterial",
+        "historical_status_peak": "passable",
+        "distance_km": 1.7
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [77.2405, 28.6366],
+          [77.2300, 28.6400],
+          [77.2190, 28.6430]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road_barakhamba_cp_mandihouse",
+      "properties": {
+        "id": "road_barakhamba_cp_mandihouse",
+        "name": "Barakhamba Road (Connaught Place to Mandi House)",
+        "source": "int_connaught_place",
+        "target": "int_mandi_house",
+        "type": "arterial",
+        "historical_status_peak": "passable",
+        "distance_km": 1.1
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [77.2274, 28.6304],
+          [77.2310, 28.6280],
+          [77.2335, 28.6260]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road_chelmsford_cp_station",
+      "properties": {
+        "id": "road_chelmsford_cp_station",
+        "name": "Chelmsford Road (Connaught Place to New Delhi Station)",
+        "source": "int_connaught_place",
+        "target": "int_new_delhi_station",
+        "type": "arterial",
+        "historical_status_peak": "passable",
+        "distance_km": 1.3
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [77.2274, 28.6304],
+          [77.2220, 28.6370],
+          [77.2190, 28.6430]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road_delhigate_connector",
+      "properties": {
+        "id": "road_delhigate_connector",
+        "name": "Delhi Gate to Ring Road link",
+        "source": "int_delhi_gate",
+        "target": "int_red_fort_south",
+        "type": "connector",
+        "historical_status_peak": "threatened",
+        "distance_km": 0.8
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [77.2405, 28.6366],
+          [77.2410, 28.6500]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road_sham_nath_sushruta_kashmere",
+      "properties": {
+        "id": "road_sham_nath_sushruta_kashmere",
+        "name": "Sham Nath Marg (Sushruta Trauma Centre to Kashmere Gate)",
+        "source": "int_civil_lines",
+        "target": "int_kashmere_gate",
+        "type": "arterial",
+        "historical_status_peak": "threatened",
+        "distance_km": 1.1
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [77.2241, 28.6748],
+          [77.2260, 28.6700],
+          [77.2285, 28.6675]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road_ridge_sushruta_hindurao",
+      "properties": {
+        "id": "road_ridge_sushruta_hindurao",
+        "name": "Civil Lines High Ground (Sushruta to Hindu Rao / Ridge)",
+        "source": "int_civil_lines",
+        "target": "int_hindu_rao_ridge",
+        "type": "arterial_elevated",
+        "historical_status_peak": "passable_safe",
+        "distance_km": 1.6
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [77.2241, 28.6748],
+          [77.2180, 28.6735],
+          [77.2092, 28.6715]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road_rani_jhansi_hindurao_cp",
+      "properties": {
+        "id": "road_rani_jhansi_hindurao_cp",
+        "name": "Rani Jhansi Elevated Corridor (Ridge to New Delhi / CP)",
+        "source": "int_hindu_rao_ridge",
+        "target": "int_rani_jhansi",
+        "type": "arterial_elevated",
+        "historical_status_peak": "passable_safe",
+        "distance_km": 2.4
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [77.2092, 28.6715],
+          [77.2085, 28.6600],
+          [77.2080, 28.6500]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "road_rani_jhansi_to_station",
+      "properties": {
+        "id": "road_rani_jhansi_to_station",
+        "name": "Desh Bandhu Gupta Marg (Rani Jhansi to Ajmeri Gate)",
+        "source": "int_rani_jhansi",
+        "target": "int_new_delhi_station",
+        "type": "arterial",
+        "historical_status_peak": "passable_safe",
+        "distance_km": 1.5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [77.2080, 28.6500],
+          [77.2140, 28.6470],
+          [77.2190, 28.6430]
+        ]
+      }
+    }
+  ]
+}

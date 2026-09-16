@@ -1,0 +1,189 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "city": "Delhi",
+    "dataset": "Critical Infrastructure",
+    "disclaimer": "HISTORICAL REFERENCE DATA (DELHI - JULY 2023) • NOT FOR LIVE EMERGENCY USE"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "hosp_lnjp",
+      "properties": {
+        "id": "hosp_lnjp",
+        "name": "Lok Nayak Jai Prakash (LNJP) Hospital",
+        "type": "hospital",
+        "beds": 2000,
+        "criticality": 10,
+        "status": "operational",
+        "address": "Delhi Gate, Jawaharlal Nehru Marg",
+        "elevation_m": 215.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [77.2405, 28.6366]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hosp_sushruta",
+      "properties": {
+        "id": "hosp_sushruta",
+        "name": "Sushruta Trauma Centre",
+        "type": "hospital",
+        "beds": 150,
+        "criticality": 9,
+        "status": "threatened",
+        "threat_reason": "Proximity to flooded Bela Road & Civil Lines",
+        "address": "9, Sham Nath Marg, Civil Lines",
+        "elevation_m": 210.2
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [77.2241, 28.6748]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hosp_hindu_rao",
+      "properties": {
+        "id": "hosp_hindu_rao",
+        "name": "Hindu Rao Hospital",
+        "type": "hospital",
+        "beds": 980,
+        "criticality": 8,
+        "status": "operational",
+        "address": "Near Subzi Mandi, Ridge, Malka Ganj",
+        "elevation_m": 228.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [77.2092, 28.6715]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hosp_gb_pant",
+      "properties": {
+        "id": "hosp_gb_pant",
+        "name": "G.B. Pant Hospital",
+        "type": "hospital",
+        "beds": 700,
+        "criticality": 9,
+        "status": "operational",
+        "address": "1, J.L. Nehru Marg, Delhi Gate",
+        "elevation_m": 215.5
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [77.2392, 28.6385]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "fire_dfs_hq",
+      "properties": {
+        "id": "fire_dfs_hq",
+        "name": "Delhi Fire Service HQ (Connaught Place)",
+        "type": "fire_station",
+        "criticality": 10,
+        "status": "operational",
+        "address": "Barakhamba Road, Connaught Place",
+        "elevation_m": 218.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [77.2274, 28.6304]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "fire_kashmere_gate",
+      "properties": {
+        "id": "fire_kashmere_gate",
+        "name": "Kashmere Gate Fire Station",
+        "type": "fire_station",
+        "criticality": 8,
+        "status": "threatened",
+        "threat_reason": "Access road via ISBT flooded on July 12-13",
+        "address": "Hamilton Road, Kashmere Gate",
+        "elevation_m": 211.5
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [77.2285, 28.6675]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "fire_roop_nagar",
+      "properties": {
+        "id": "fire_roop_nagar",
+        "name": "Roop Nagar Fire Station",
+        "type": "fire_station",
+        "criticality": 7,
+        "status": "operational",
+        "address": "Roop Nagar, Near Delhi University",
+        "elevation_m": 222.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [77.2025, 28.6830]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "wtp_wazirabad",
+      "properties": {
+        "id": "wtp_wazirabad",
+        "name": "Wazirabad Water Treatment Plant",
+        "type": "water_treatment_plant",
+        "criticality": 10,
+        "status": "inundated",
+        "threat_reason": "Pumps flooded; operations suspended July 13-14",
+        "address": "Outer Ring Road, Wazirabad Barrage",
+        "elevation_m": 208.5
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [77.2312, 28.7118]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "wtp_chandrawal",
+      "properties": {
+        "id": "wtp_chandrawal",
+        "name": "Chandrawal Water Treatment Plant",
+        "type": "water_treatment_plant",
+        "criticality": 9,
+        "status": "inundated",
+        "threat_reason": "Civil Lines backflow submerged intake wells",
+        "address": "Chandrawal, Civil Lines",
+        "elevation_m": 209.0
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [77.2255, 28.6812]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "regulator_drain12",
+      "properties": {
+        "id": "regulator_drain12",
+        "name": "Drain #12 Regulator (WHO Building)",
+        "type": "drainage_regulator",
+        "criticality": 10,
+        "status": "failed",
+        "threat_reason": "Breached on July 13; Yamuna backflow flooded ITO & Vikas Marg",
+        "address": "Ring Road near WHO Building, ITO",
+        "elevation_m": 207.9
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [77.2475, 28.6285]
+      }
+    }
+  ]
+}
