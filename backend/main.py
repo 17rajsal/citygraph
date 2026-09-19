@@ -37,7 +37,7 @@ cors_origins_env = os.getenv("CORS_ORIGINS", "")
 if cors_origins_env:
     allowed_origins = [orig.strip() for orig in cors_origins_env.split(",") if orig.strip()]
 else:
-    # Safe development default
+    # Safe default including development and deployed Vercel domains
     allowed_origins = [
         "http://localhost:5173",
         "http://localhost:5174",
@@ -45,11 +45,17 @@ else:
         "http://127.0.0.1:5173",
         "http://127.0.0.1:5174",
         "http://127.0.0.1:5175",
+        "https://frontend-beta-taupe-93.vercel.app",
+        "https://citygraph-intelligence.vercel.app",
+        "https://frontend-8ramg26s7-7xtr.vercel.app",
+        "https://frontend-3jyjzj4o9-7xtr.vercel.app",
+        "https://frontend-7xtr.vercel.app",
     ]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=allowed_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["Content-Type", "Authorization", "X-Requested-With"],
