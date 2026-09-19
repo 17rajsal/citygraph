@@ -19,7 +19,7 @@ services:
       - key: DATABASE_URL
         value: sqlite:///./citygraph.db
       - key: CORS_ORIGINS
-        value: https://citygraph.vercel.app,https://citygraph-git-main.vercel.app,https://citygraph-frontend.vercel.app
+        value: https://frontend-beta-taupe-93.vercel.app,https://citygraph-intelligence.vercel.app,https://frontend-8ramg26s7-7xtr.vercel.app
       - key: ENABLE_DOCS
         value: "true"
       - key: SEED_DEFAULT_USER
