@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: citygraph-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    region: oregon
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: ENVIRONMENT
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: 1440
+      - key: DATABASE_URL
+        value: sqlite:///./citygraph.db
+      - key: CORS_ORIGINS
+        value: https://citygraph.vercel.app,https://citygraph-git-main.vercel.app,https://citygraph-frontend.vercel.app
+      - key: ENABLE_DOCS
+        value: "true"
+      - key: SEED_DEFAULT_USER
+        value: "false"

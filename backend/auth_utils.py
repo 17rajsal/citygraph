@@ -1,5 +1,6 @@
 import os
-from datetime import datetime, timedelta
+import logging
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 import bcrypt
@@ -11,9 +12,24 @@ from sqlalchemy.orm import Session
 from database import get_db
 from models import User
 
+logger = logging.getLogger("citygraph.auth")
+
+ENVIRONMENT = os.getenv("ENVIRONMENT", "development").lower()
 SECRET_KEY = os.getenv("SECRET_KEY", "citygraph_super_secret_jwt_key_development_2026")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))  # 24 hours
+
+# Production validation for SECRET_KEY
+if ENVIRONMENT == "production":
+    if not SECRET_KEY or SECRET_KEY == "citygraph_super_secret_jwt_key_development_2026" or len(SECRET_KEY) < 32:
+        logger.critical("FATAL: Insecure or default SECRET_KEY detected in production environment!")
+        raise RuntimeError(
+            "Production deployment requires a cryptographically strong SECRET_KEY (at least 32 characters) "
+            "configured via environment variables."
+        )
+else:
+    if SECRET_KEY == "citygraph_super_secret_jwt_key_development_2026":
+        logger.warning("Using default development SECRET_KEY. Ensure SECRET_KEY is set before deploying to production.")
 
 security = HTTPBearer(auto_error=False)
 
@@ -36,10 +52,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
+    now_utc = datetime.now(timezone.utc)
     if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+        expire = now_utc + expires_delta
     else:
-        expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        expire = now_utc + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 

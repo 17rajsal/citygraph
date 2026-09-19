@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.jsx';
+import { ENABLE_DEMO_LOGIN } from '../config.js';
 import './Login.css';
 
 export default function Login() {
@@ -129,18 +130,20 @@ export default function Login() {
           </button>
         </form>
 
-        {/* Demo Fast-Login Helper */}
-        <div className="auth-demo-box">
-          <p className="demo-title">Local Development Demo Account:</p>
-          <button
-            type="button"
-            className="demo-autofill-btn"
-            onClick={handleFillDemo}
-            disabled={loading}
-          >
-            Fill Demo Admin Credentials (admin@citygraph.org)
-          </button>
-        </div>
+        {/* Demo Fast-Login Helper (Only shown if ENABLE_DEMO_LOGIN is active) */}
+        {ENABLE_DEMO_LOGIN && (
+          <div className="auth-demo-box">
+            <p className="demo-title">Sandbox Demo Account:</p>
+            <button
+              type="button"
+              className="demo-autofill-btn"
+              onClick={handleFillDemo}
+              disabled={loading}
+            >
+              Fill Demo Admin Credentials (admin@citygraph.org)
+            </button>
+          </div>
+        )}
 
         {/* Footer Link to Register */}
         <div className="auth-footer">

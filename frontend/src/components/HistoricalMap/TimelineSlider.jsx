@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 
 export default function TimelineSlider({
-  timeline,
+  timeline = [],
   selectedDate,
   onSelectDate,
+  onDateChange,
   loading,
 }) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const handleSelect = onSelectDate || onDateChange || (() => {});
 
   const currentIndex = timeline.findIndex((t) => t.date === selectedDate);
   const currentEntry = timeline[currentIndex] || timeline[0];
@@ -15,7 +17,7 @@ export default function TimelineSlider({
     let interval = null;
     if (isPlaying) {
       interval = setInterval(() => {
-        onSelectDate((prevDate) => {
+        handleSelect((prevDate) => {
           const idx = timeline.findIndex((t) => t.date === prevDate);
           if (idx >= 0 && idx < timeline.length - 1) {
             return timeline[idx + 1].date;
@@ -29,17 +31,17 @@ export default function TimelineSlider({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isPlaying, timeline, onSelectDate]);
+  }, [isPlaying, timeline, handleSelect]);
 
   const handlePrev = () => {
     if (currentIndex > 0) {
-      onSelectDate(timeline[currentIndex - 1].date);
+      handleSelect(timeline[currentIndex - 1].date);
     }
   };
 
   const handleNext = () => {
     if (currentIndex < timeline.length - 1) {
-      onSelectDate(timeline[currentIndex + 1].date);
+      handleSelect(timeline[currentIndex + 1].date);
     }
   };
 

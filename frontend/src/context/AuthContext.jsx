@@ -1,8 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { API_BASE } from '../config.js';
 
 const AuthContext = createContext(null);
-
-const API_BASE = 'http://127.0.0.1:8000';
 
 export function AuthProvider({ children }) {
   const [token, setToken] = useState(() => localStorage.getItem('citygraph_token') || null);

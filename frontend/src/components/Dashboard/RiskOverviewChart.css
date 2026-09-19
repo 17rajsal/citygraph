@@ -1,0 +1,119 @@
+/* RiskOverviewChart.css - SVG line chart and telemetry */
+
+.risk-overview-chart-card {
+  background: linear-gradient(180deg, #111b2e 0%, #0d1527 100%);
+  border: 1px solid #1e2e4a;
+  border-radius: 10px;
+  padding: 14px 16px;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 250px;
+  min-height: 250px;
+  box-sizing: border-box;
+}
+
+.card-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.card-title {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin: 0 0 2px 0;
+}
+
+.card-subtitle {
+  font-size: 10.5px;
+  color: #64748b;
+}
+
+.sim-indicator-pill {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.active-stress {
+  background: rgba(239, 68, 68, 0.18);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+.active-base {
+  background: rgba(14, 165, 233, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(14, 165, 233, 0.3);
+}
+
+/* SVG Chart Layout */
+.chart-svg-container {
+  position: relative;
+  width: 100%;
+  margin: 6px 0;
+}
+
+.risk-svg-chart {
+  width: 100%;
+  height: 100px;
+  overflow: visible;
+}
+
+.chart-stroke-animated {
+  transition: all 0.6s ease;
+}
+
+.chart-x-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+/* Footer Metrics */
+.chart-footer-metrics {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid #162438;
+  padding-top: 8px;
+  margin-top: 6px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 10.5px;
+}
+
+.leg-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.base-dot {
+  background: #0284c7;
+}
+
+.active-dot {
+  background: #ef4444;
+}
+
+.leg-lbl {
+  color: #64748b;
+}
+
+.leg-val {
+  font-weight: 700;
+  color: #cbd5e1;
+}

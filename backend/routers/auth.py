@@ -17,6 +17,9 @@ from auth_utils import (
 
 logger = logging.getLogger("citygraph.auth")
 
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from rate_limiter import limiter
+
 router = APIRouter(
     prefix="/api/auth",
     tags=["Authentication"],
@@ -55,26 +58,42 @@ class TokenResponse(BaseModel):
 
 def seed_default_user(db: Session) -> None:
     """Seed a default administrative user for local development and demonstration."""
-    admin_email = "admin@citygraph.org"
+    import os
+    environment = os.getenv("ENVIRONMENT", "development").lower()
+    seed_allowed = os.getenv("SEED_DEFAULT_USER", "true" if environment != "production" else "false").lower() == "true"
+    
+    if not seed_allowed:
+        logger.info("Default user auto-seeding skipped per configuration.")
+        return
+
+    admin_email = os.getenv("INITIAL_ADMIN_EMAIL", "admin@citygraph.org")
     admin_user = db.query(User).filter(
         (User.email == admin_email) | (User.username == "admin")
     ).first()
 
     if not admin_user:
+        raw_password = os.getenv("INITIAL_ADMIN_PASSWORD", "password123" if environment != "production" else None)
+        if not raw_password:
+            logger.warning("INITIAL_ADMIN_PASSWORD not set; skipping admin user seeding.")
+            return
+
         new_admin = User(
             email=admin_email,
             username="admin",
             full_name="City Operations Lead",
-            hashed_password=hash_password("password123"),
+            hashed_password=hash_password(raw_password),
             role="Incident Commander",
         )
         db.add(new_admin)
         db.commit()
-        logger.info("Default development user seeded: admin@citygraph.org / password123")
+        logger.info(f"Default user seeded successfully: {admin_email} (password configured securely)")
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-def register_user(req: UserRegister, db: Session = Depends(get_db)):
+def register_user(req: UserRegister, request: Request, db: Session = Depends(get_db)):
+    # Rate limit registration (5 requests per minute per IP)
+    limiter.check_rate_limit(request, endpoint_key="auth_register", max_requests=5, window_seconds=60)
+
     email = req.email.strip().lower()
     username = req.username.strip().lower()
 
@@ -134,7 +153,10 @@ def register_user(req: UserRegister, db: Session = Depends(get_db)):
 
 
 @router.post("/login", response_model=TokenResponse)
-def login_user(req: UserLogin, db: Session = Depends(get_db)):
+def login_user(req: UserLogin, request: Request, db: Session = Depends(get_db)):
+    # Rate limit login attempts (5 requests per minute per IP to mitigate brute-force)
+    limiter.check_rate_limit(request, endpoint_key="auth_login", max_requests=5, window_seconds=60)
+
     identifier = req.username_or_email.strip().lower()
 
     user = db.query(User).filter(
