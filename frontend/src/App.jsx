@@ -18,6 +18,7 @@ import RiskOverviewChart from './components/Dashboard/RiskOverviewChart.jsx';
 import RiskLeaderboard from './components/Dashboard/RiskLeaderboard.jsx';
 import SimulationSummaryCard from './components/Dashboard/SimulationSummaryCard.jsx';
 import MethodologyModal from './components/Dashboard/MethodologyModal.jsx';
+import HowItWorks from './components/Dashboard/HowItWorks.jsx';
 
 import MapView from './components/HistoricalMap/MapView.jsx';
 import NepalReferenceView from './components/NepalMap/NepalReferenceView.jsx';
@@ -54,7 +55,7 @@ function Dashboard() {
     transformer: true,
     metro: true,
   });
-  const [mapStyle, setMapStyle] = useState('dark'); // Clean CartoDB Dark Matter by default (Zero key required)
+  const [mapStyle, setMapStyle] = useState('streets'); // CARTO Voyager light basemap by default (Zero key required)
 
   // Network & UI states
   const [loading, setLoading] = useState(false);
@@ -421,6 +422,9 @@ function Dashboard() {
                       loading={loading}
                     />
                   </div>
+
+                  {/* Architecture & Engine Explanation Guide */}
+                  <HowItWorks />
 
                   {/* Footer Ribbon with Educational White Paper Links */}
                   <footer className="dashboard-footer-ribbon">

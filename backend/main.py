@@ -139,20 +139,23 @@ def create_city_graph() -> None:
         "road",
         "transformer",
         "fire_station",
+        "metro",
     ]
 
-    # Create 70 nodes
-    for index in range(1, 71):
+    # Create 108 nodes
+    for index in range(1, 109):
         node_id = f"node_{index}"
 
-        if index == 1:
+        if index == 1 or (71 <= index <= 76):
             node_type = "hospital"
-        elif index == 2:
+        elif index == 2 or (77 <= index <= 80):
             node_type = "fire_station"
-        elif index in [10, 20, 30, 40, 50, 60]:
+        elif index in [10, 20, 30, 40, 50, 60, 81, 82, 83, 84]:
             node_type = "drainage"
-        elif index in [15, 35, 55]:
+        elif index in [15, 35, 55, 85, 86, 87, 88]:
             node_type = "transformer"
+        elif 89 <= index <= 98:
+            node_type = "metro"
         else:
             node_type = "road"
 
@@ -172,7 +175,7 @@ def create_city_graph() -> None:
         }
 
     # Create a connected backbone
-    for index in range(1, 70):
+    for index in range(1, 108):
         city_graph.add_edge(
             f"node_{index}",
             f"node_{index + 1}",
@@ -180,10 +183,10 @@ def create_city_graph() -> None:
             risk_penalty=0,
         )
 
-    # Add extra connections
-    for _ in range(45):
-        first = random.randint(1, 70)
-        second = random.randint(1, 70)
+    # Add extra random connections
+    for _ in range(75):
+        first = random.randint(1, 108)
+        second = random.randint(1, 108)
 
         if first != second:
             city_graph.add_edge(
@@ -192,6 +195,76 @@ def create_city_graph() -> None:
                 distance=random.randint(1, 10),
                 risk_penalty=0,
             )
+
+    # Add realistic multi-modal cross-corridor links
+    delhi_strategic_links = [
+        # Medical links
+        ("node_1", "node_71", 1),   # AIIMS to Safdarjung Hospital (Direct Medical Precinct)
+        ("node_1", "node_31", 2),   # AIIMS to AIIMS South Approach
+        ("node_71", "node_32", 2),  # Safdarjung to Safdarjung Enclave
+        ("node_72", "node_91", 3),  # Max Saket to Hauz Khas Metro
+        ("node_72", "node_104", 2), # Max Saket to Chirag Dilli Flyover
+        ("node_73", "node_12", 2),  # Ganga Ram to Karol Bagh Link
+        ("node_73", "node_13", 2),  # Ganga Ram to Pusa Road
+        ("node_74", "node_43", 3),  # Fortis Escorts to Ring Road Underpass #43
+        ("node_74", "node_50", 4),  # Fortis Escorts to Okhla Barrage
+        ("node_75", "node_101", 2), # Jaypee Hospital to Noida Expressway Km 5
+        ("node_75", "node_92", 4),  # Jaypee Hospital to Botanical Garden Metro
+        ("node_76", "node_102", 3), # Medanta to Cyber Hub Exit
+        ("node_76", "node_93", 3),  # Medanta to Millennium City Metro
+        # Fire Emergency Commands
+        ("node_2", "node_16", 2),   # DFS HQ to Connaught Place
+        ("node_2", "node_90", 1),   # DFS HQ to Rajiv Chowk Metro
+        ("node_77", "node_104", 3), # Nehru Place Fire to Chirag Dilli
+        ("node_78", "node_33", 2),  # Bhikaji Cama Fire to Bhikaji Cama Way
+        ("node_79", "node_102", 3), # Gurugram Sec 29 Fire to Cyber Hub
+        ("node_80", "node_92", 3),  # Noida Sec 2 Fire to Botanical Garden Metro
+        # Metro Interchanges to Major Arterials
+        ("node_89", "node_3", 1),   # Kashmere Gate Metro to ISBT Link
+        ("node_89", "node_20", 2),  # Kashmere Gate Metro to Kashmere Gate Sluice
+        ("node_90", "node_16", 1),  # Rajiv Chowk to Connaught Place Hub
+        ("node_91", "node_31", 3),  # Hauz Khas Metro to AIIMS South Approach
+        ("node_92", "node_99", 4),  # Botanical Garden to DND Flyway
+        ("node_93", "node_102", 3), # Millennium City Metro to Cyber Hub Exit
+        ("node_94", "node_106", 3), # Anand Vihar to Vikas Marg
+        ("node_94", "node_60", 4),  # Anand Vihar to Mayur Vihar Pump
+        ("node_95", "node_7", 2),   # New Delhi Metro to Delhi Gate
+        ("node_96", "node_70", 1),  # Airport T3 Metro to IGI Airport T3
+        ("node_97", "node_19", 2),  # Central Sectt to India Gate Corridor
+        ("node_98", "node_48", 2),  # NSP Interchange to Netaji Subhash Place Junc
+        # Drainage & Flood Catchment Links
+        ("node_10", "node_56", 2),  # Wazirabad Pump to GT Karnal Road
+        ("node_20", "node_3", 2),   # Kashmere Gate Sluice to ISBT Link
+        ("node_30", "node_21", 2),  # ITO Drain to Mathura Road North
+        ("node_40", "node_27", 2),  # Barapullah Sluice to Barapullah Entry
+        ("node_40", "node_100", 2), # Barapullah Sluice to Barapullah Phase-2
+        ("node_43", "node_28", 2),  # Underpass #43 to Lajpat Nagar Link
+        ("node_43", "node_99", 3),  # Underpass #43 to DND Flyway
+        ("node_50", "node_83", 4),  # Okhla Barrage to Badarpur Outfall
+        ("node_60", "node_103", 3), # Mayur Vihar Pump to Akshardham Split
+        ("node_81", "node_47", 3),  # Najafgarh Drain to Punjabi Bagh Club Rd
+        ("node_82", "node_107", 3), # Hindan Cut to GT Road Sahibabad
+        ("node_83", "node_105", 2), # Badarpur Outfall to Badarpur Elevated Border
+        ("node_84", "node_70", 3),  # Palam Drain to IGI Airport
+        # Grid Substations to Neighboring Nodes
+        ("node_15", "node_59", 2),  # Civil Lines Substation to Civil Lines Marg
+        ("node_35", "node_18", 2),  # Pragati Power to Mandi House
+        ("node_55", "node_29", 3),  # Sarita Vihar Substation to Moolchand
+        ("node_85", "node_99", 2),  # Maharani Bagh Grid to DND Flyway
+        ("node_86", "node_101", 3), # Noida Sec 148 to Noida Expressway
+        ("node_87", "node_76", 3),  # Badshahpur Grid to Medanta
+        ("node_88", "node_107", 2), # Sahibabad Grid to GT Road Sahibabad
+        # Key Expressway & Regional Arterials
+        ("node_99", "node_100", 3), # DND Flyway to Barapullah Phase-2
+        ("node_100", "node_27", 2), # Barapullah Phase-2 to Barapullah Entry
+        ("node_102", "node_70", 4), # Cyber Hub Exit to IGI Airport
+        ("node_103", "node_106", 3),# Akshardham Split to Vikas Marg
+        ("node_104", "node_30", 4), # Chirag Dilli to Andrews Ganj
+        ("node_105", "node_74", 4), # Badarpur Border to Fortis Escorts
+        ("node_108", "node_76", 4), # MG Road Arjan Garh to Medanta
+    ]
+    for src, dst, dist in delhi_strategic_links:
+        city_graph.add_edge(src, dst, distance=dist, risk_penalty=0)
 
     # Deterministic human-readable metadata enrichment (Zero random calls)
     delhi_corridor_names = [
@@ -399,6 +472,272 @@ def create_city_graph() -> None:
             zone = "South-West Aviation Corridor"
             description = "Primary international and domestic aeromedical transit gateway."
             lat, lng = 28.5562, 77.1000
+        elif node_id == "node_71":
+            name = "Safdarjung Hospital Multi-Specialty"
+            short_name = "Safdarjung Hospital"
+            type_label = "Central Emergency Hospital"
+            zone = "South Delhi Medical Corridor"
+            description = "Major tertiary healthcare center and emergency burns referral hospital."
+            lat, lng = 28.5700, 77.2065
+        elif node_id == "node_72":
+            name = "Max Super Speciality Hospital Saket"
+            short_name = "Max Hospital Saket"
+            type_label = "Tertiary Care Hospital"
+            zone = "South Delhi Healthcare Precinct"
+            description = "High-capacity emergency cardiology and trauma center."
+            lat, lng = 28.5282, 77.2114
+        elif node_id == "node_73":
+            name = "Sir Ganga Ram Hospital Rajendra Nagar"
+            short_name = "Ganga Ram Hospital"
+            type_label = "Premier Multi-Specialty Hospital"
+            zone = "Central-West Healthcare Division"
+            description = "Large multi-specialty healthcare and critical care referral center."
+            lat, lng = 28.6385, 77.1895
+        elif node_id == "node_74":
+            name = "Fortis Escorts Heart Institute Okhla"
+            short_name = "Fortis Escorts Okhla"
+            type_label = "Cardiac & Trauma Hospital"
+            zone = "South-East Healthcare Corridor"
+            description = "Leading emergency cardiovascular and acute trauma medical facility."
+            lat, lng = 28.5605, 77.2760
+        elif node_id == "node_75":
+            name = "Jaypee Hospital Sector 128 Noida"
+            short_name = "Jaypee Hospital Noida"
+            type_label = "Regional Super Speciality Hospital"
+            zone = "Noida Expressway Medical Zone"
+            description = "Multi-organ transplant and regional emergency trauma hub."
+            lat, lng = 28.5140, 77.3685
+        elif node_id == "node_76":
+            name = "Medanta - The Medicity Gurugram"
+            short_name = "Medanta Medicity"
+            type_label = "Multi-Super Speciality Institute"
+            zone = "Gurugram Medical Corridor"
+            description = "1,250-bed flagship emergency trauma and critical care campus."
+            lat, lng = 28.4390, 77.0425
+        elif node_id == "node_77":
+            name = "Nehru Place Fire Station"
+            short_name = "Nehru Place Fire Stn"
+            type_label = "Regional Fire Station"
+            zone = "South District Fire Command"
+            description = "Rapid response emergency fire station serving commercial South Delhi."
+            lat, lng = 28.5490, 77.2520
+        elif node_id == "node_78":
+            name = "Bhikaji Cama Place Fire Command"
+            short_name = "Bhikaji Cama Fire"
+            type_label = "Sub-Divisional Fire HQ"
+            zone = "South-West Emergency Division"
+            description = "Specialized high-rise and arterial rescue response unit."
+            lat, lng = 28.5670, 77.1860
+        elif node_id == "node_79":
+            name = "Sector 29 Fire Station Gurugram"
+            short_name = "Gurugram Sec 29 Fire"
+            type_label = "Municipal Fire Headquarters"
+            zone = "Gurugram Fire & Rescue Command"
+            description = "Primary industrial and high-rise emergency dispatch center for Gurugram."
+            lat, lng = 28.4680, 77.0620
+        elif node_id == "node_80":
+            name = "Sector 2 Fire Command Noida"
+            short_name = "Noida Sec 2 Fire Stn"
+            type_label = "District Fire Headquarters"
+            zone = "Noida Fire Safety Division"
+            description = "Industrial safety and flood rescue coordination station for Noida."
+            lat, lng = 28.5880, 77.3150
+        elif node_id == "node_81":
+            name = "Najafgarh Drain Outfall Pumping Complex"
+            short_name = "Najafgarh Drain Pump"
+            type_label = "Major Drainage Outfall"
+            zone = "West Yamuna Drainage Basin"
+            description = "Largest stormwater canal outfall regulating 60% of Delhi basin runoff."
+            lat, lng = 28.7050, 77.2180
+        elif node_id == "node_82":
+            name = "Hindan River Cut Spillway Regulator Ghaziabad"
+            short_name = "Hindan Cut Spillway"
+            type_label = "Regional Flood Regulator"
+            zone = "East NCR Flood Protection Division"
+            description = "Inter-basin diversion canal regulating surplus flood discharge to Yamuna."
+            lat, lng = 28.6650, 77.3620
+        elif node_id == "node_83":
+            name = "Badarpur Thermal Canal Outfall Regulator"
+            short_name = "Badarpur Outfall Pump"
+            type_label = "Stormwater Pumping Station"
+            zone = "Faridabad Border Flood Control"
+            description = "High-discharge pump facility preventing waterlogging on Mathura Road NH-44."
+            lat, lng = 28.5020, 77.3120
+        elif node_id == "node_84":
+            name = "Palam Drain Flood Relief Pumping Facility"
+            short_name = "Palam Drain Pump"
+            type_label = "Stormwater Pumping Station"
+            zone = "South-West Drainage Basin"
+            description = "Underpass stormwater pumping station protecting Airport access roads."
+            lat, lng = 28.5720, 77.1180
+        elif node_id == "node_85":
+            name = "Maharani Bagh 400kV Power Ring Substation"
+            short_name = "Maharani Bagh Grid"
+            type_label = "Extra High Voltage Substation"
+            zone = "South-East Transmission Ring"
+            description = "Strategic 400kV transmission hub powering riverfront drainage systems."
+            lat, lng = 28.5780, 77.2680
+        elif node_id == "node_86":
+            name = "Sector 148 400kV Grid Substation Noida"
+            short_name = "Noida Sec 148 Substation"
+            type_label = "Regional Power Grid Substation"
+            zone = "Noida Power Transmission Ring"
+            description = "High-voltage grid connecting Western UP power to Noida Expressway corridor."
+            lat, lng = 28.4850, 77.4120
+        elif node_id == "node_87":
+            name = "Badshahpur 400kV Power Grid Gurugram"
+            short_name = "Badshahpur Grid Gurugram"
+            type_label = "Extra High Voltage Substation"
+            zone = "Gurugram Power Division"
+            description = "Major transmission terminal serving southern Gurugram and Cyber Hub."
+            lat, lng = 28.4150, 77.0580
+        elif node_id == "node_88":
+            name = "Sahibabad 220kV Grid Substation Ghaziabad"
+            short_name = "Sahibabad 220kV Grid"
+            type_label = "Power Grid Substation"
+            zone = "Ghaziabad Industrial Grid"
+            description = "Supplies critical power to East Delhi water treatment and transit systems."
+            lat, lng = 28.6690, 77.3480
+        elif node_id == "node_89":
+            name = "Kashmere Gate Multi-Line Metro Interchange"
+            short_name = "Kashmere Gate Metro"
+            type_label = "Mass Transit Interchange Hub"
+            zone = "North-Central Multi-Modal Hub"
+            description = "India's largest tri-line metro interchange connecting Red, Yellow, and Violet lines."
+            lat, lng = 28.6675, 77.2285
+        elif node_id == "node_90":
+            name = "Rajiv Chowk Central Hub Metro"
+            short_name = "Rajiv Chowk Metro"
+            type_label = "Mass Transit Interchange Hub"
+            zone = "Central Commercial Precinct"
+            description = "Core radial transit exchange transferring 500k daily passengers between Yellow and Blue lines."
+            lat, lng = 28.6328, 77.2195
+        elif node_id == "node_91":
+            name = "Hauz Khas Yellow/Magenta Metro Interchange"
+            short_name = "Hauz Khas Metro"
+            type_label = "Deep Underground Interchange Hub"
+            zone = "South Delhi Transit Corridor"
+            description = "Deepest metro interchange in NCR connecting South Delhi to IGI Airport."
+            lat, lng = 28.5432, 77.2065
+        elif node_id == "node_92":
+            name = "Botanical Garden Metro Interchange Noida"
+            short_name = "Botanical Garden Metro"
+            type_label = "Interstate Transit Interchange"
+            zone = "Noida Transit Gateway"
+            description = "Critical transit interchange linking Blue Line and Magenta Line express to Delhi."
+            lat, lng = 28.5642, 77.3342
+        elif node_id == "node_93":
+            name = "Millennium City Centre Metro Gurugram"
+            short_name = "Millennium City Metro"
+            type_label = "Mass Transit Terminal Hub"
+            zone = "Gurugram Transit Corridor"
+            description = "Terminal station of Yellow Line connecting to Gurugram Rapid Metro."
+            lat, lng = 28.4595, 77.0725
+        elif node_id == "node_94":
+            name = "Anand Vihar ISBT & Railway Metro Hub"
+            short_name = "Anand Vihar Metro Hub"
+            type_label = "Multi-Modal Transit Terminal"
+            zone = "Trans-Yamuna Transit Gateway"
+            description = "Integrated multi-modal transit hub linking Metro, Railway, and Interstate bus services."
+            lat, lng = 28.6469, 77.3160
+        elif node_id == "node_95":
+            name = "New Delhi Railway Station Metro Terminal"
+            short_name = "New Delhi Metro Terminal"
+            type_label = "National Rail-Transit Connector"
+            zone = "Central Rail-Transit Precinct"
+            description = "Direct underground connection between Yellow Line, Airport Express, and IR Railway."
+            lat, lng = 28.6425, 77.2215
+        elif node_id == "node_96":
+            name = "IGI Airport Terminal-3 Express Metro"
+            short_name = "Airport T3 Metro"
+            type_label = "Aviation High-Speed Metro"
+            zone = "Aviation Corridor Hub"
+            description = "High-speed Airport Express transit terminal inside Indira Gandhi Airport Terminal-3."
+            lat, lng = 28.5562, 77.0855
+        elif node_id == "node_97":
+            name = "Central Secretariat Metro Interchange"
+            short_name = "Central Sectt Metro"
+            type_label = "Executive Transit Interchange"
+            zone = "Central Government Precinct"
+            description = "Transit interchange connecting Yellow and Violet lines directly to Ministries."
+            lat, lng = 28.6148, 77.2118
+        elif node_id == "node_98":
+            name = "Netaji Subhash Place Interchange (NSP)"
+            short_name = "NSP Metro Hub"
+            type_label = "North-West Transit Hub"
+            zone = "North-West Ring Transit Hub"
+            description = "Interchange between Red Line and Pink Ring Line serving North-West Delhi."
+            lat, lng = 28.6955, 77.1525
+        elif node_id == "node_99":
+            name = "DND Flyway Yamuna Toll Plaza"
+            short_name = "DND Flyway Toll"
+            type_label = "Interstate River Expressway"
+            zone = "Yamuna Interstate Corridor"
+            description = "8-lane elevated toll expressway connecting South Delhi to Noida across Yamuna."
+            lat, lng = 28.5815, 77.2785
+        elif node_id == "node_100":
+            name = "Barapullah Phase-2 Elevated Corridor"
+            short_name = "Barapullah Elevated Cor"
+            type_label = "Signal-Free Elevated Arterial"
+            zone = "South-East Arterial Transit Corridor"
+            description = "Key signal-free elevated connector between Sarai Kale Khan and INA Market."
+            lat, lng = 28.5840, 77.2410
+        elif node_id == "node_101":
+            name = "Noida-Greater Noida Expressway Km 5"
+            short_name = "Noida Expressway Km 5"
+            type_label = "High-Speed Access Expressway"
+            zone = "Noida Commercial Axis"
+            description = "Major 6-lane access-controlled expressway corridor serving industrial NCR."
+            lat, lng = 28.5350, 77.3550
+        elif node_id == "node_102":
+            name = "Delhi-Gurugram Expressway Cyber Hub Exit"
+            short_name = "Cyber Hub NH-48 Exit"
+            type_label = "Interstate Access Expressway"
+            zone = "Gurugram Commercial Gateway"
+            description = "Busiest expressway interchange in India linking Delhi to DLF Cyber City."
+            lat, lng = 28.4985, 77.0890
+        elif node_id == "node_103":
+            name = "Delhi-Meerut Expressway Akshardham Split"
+            short_name = "Akshardham Expressway Split"
+            type_label = "High-Capacity Eastern Expressway"
+            zone = "Trans-Yamuna Expressway Hub"
+            description = "14-lane high-capacity transit corridor funneling traffic toward East NCR."
+            lat, lng = 28.6180, 77.2800
+        elif node_id == "node_104":
+            name = "Outer Ring Road Chirag Dilli Flyover"
+            short_name = "Chirag Dilli Flyover"
+            type_label = "Orbital Transit Flyover"
+            zone = "South Delhi Orbital Axis"
+            description = "Multi-level arterial flyover linking Greater Kailash, Saket, and Kalkaji."
+            lat, lng = 28.5390, 77.2290
+        elif node_id == "node_105":
+            name = "Badarpur Elevated Border Corridor"
+            short_name = "Badarpur Border Flyover"
+            type_label = "Interstate Gateway Flyover"
+            zone = "Delhi-Faridabad Gateway"
+            description = "Elevated bypass over congested border points connecting Delhi to Faridabad."
+            lat, lng = 28.4980, 77.3020
+        elif node_id == "node_106":
+            name = "Vikas Marg Laxmi Nagar Transit Axis"
+            short_name = "Vikas Marg Axis"
+            type_label = "Arterial Transit Way"
+            zone = "Trans-Yamuna Commercial District"
+            description = "Major arterial connector from ITO across the river into East Delhi commercial hubs."
+            lat, lng = 28.6310, 77.2770
+        elif node_id == "node_107":
+            name = "GT Road Mohan Nagar Junction Ghaziabad"
+            short_name = "GT Road Mohan Nagar"
+            type_label = "Northern NCR Arterial Corridor"
+            zone = "Ghaziabad Transit Corridor"
+            description = "Key transit junction on Historic Grand Trunk Road connecting Delhi to Western UP."
+            lat, lng = 28.6750, 77.3820
+        elif node_id == "node_108":
+            name = "Mehrauli-Gurugram Road Arjan Garh Border"
+            short_name = "MG Road Arjan Garh"
+            type_label = "Inter-City Arterial Corridor"
+            zone = "South-West Inter-City Transit Corridor"
+            description = "Major arterial border corridor connecting South Delhi with Gurugram commercial belt."
+            lat, lng = 28.4810, 77.1350
         else:
             corridor_idx = idx % len(delhi_corridor_names)
             corridor = delhi_corridor_names[corridor_idx]

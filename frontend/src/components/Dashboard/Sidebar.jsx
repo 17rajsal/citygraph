@@ -254,8 +254,9 @@ export default function Sidebar({
             <span className="section-title">MAP BASEMAP</span>
             <div className="map-style-pills">
               {[
+                { id: 'streets', label: 'Voyager (Light)' },
+                { id: 'positron', label: 'Positron' },
                 { id: 'dark', label: 'Dark' },
-                { id: 'streets', label: 'Streets' },
                 { id: 'satellite', label: 'Satellite' },
               ].map(({ id, label }) => (
                 <button

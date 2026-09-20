@@ -1,11 +1,11 @@
-/* RiskOverviewChart.css - SVG line chart and telemetry */
+/* RiskOverviewChart.css - SVG line chart and telemetry (Premium Light Theme) */
 
 .risk-overview-chart-card {
-  background: linear-gradient(180deg, #111b2e 0%, #0d1527 100%);
-  border: 1px solid #1e2e4a;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 14px 16px;
-  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.35);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -18,18 +18,18 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .card-title {
   font-size: 13.5px;
   font-weight: 800;
-  color: #f1f5f9;
+  color: #0f172a;
   margin: 0 0 2px 0;
 }
 
 .card-subtitle {
-  font-size: 10.5px;
+  font-size: 11px;
   color: #64748b;
 }
 
@@ -42,22 +42,22 @@
 }
 
 .active-stress {
-  background: rgba(239, 68, 68, 0.18);
-  color: #f87171;
-  border: 1px solid rgba(239, 68, 68, 0.4);
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
 }
 
 .active-base {
-  background: rgba(14, 165, 233, 0.15);
-  color: #38bdf8;
-  border: 1px solid rgba(14, 165, 233, 0.3);
+  background: #e0f2fe;
+  color: #0369a1;
+  border: 1px solid #bae6fd;
 }
 
 /* SVG Chart Layout */
 .chart-svg-container {
   position: relative;
   width: 100%;
-  margin: 6px 0;
+  margin: 4px 0;
 }
 
 .risk-svg-chart {
@@ -73,47 +73,35 @@
 .chart-x-labels {
   display: flex;
   justify-content: space-between;
-  font-size: 9px;
+  font-size: 9.5px;
   color: #64748b;
   margin-top: 2px;
 }
 
-/* Footer Metrics */
-.chart-footer-metrics {
+.chart-metrics-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 6px 10px;
+}
+
+.mini-metric-col {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-top: 1px solid #162438;
-  padding-top: 8px;
-  margin-top: 6px;
+  flex-direction: column;
 }
 
-.legend-item {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  font-size: 10.5px;
-}
-
-.leg-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-}
-
-.base-dot {
-  background: #0284c7;
-}
-
-.active-dot {
-  background: #ef4444;
-}
-
-.leg-lbl {
-  color: #64748b;
-}
-
-.leg-val {
+.mini-m-lbl {
+  font-size: 9px;
   font-weight: 700;
-  color: #cbd5e1;
+  color: #64748b;
+  text-transform: uppercase;
+}
+
+.mini-m-val {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
 }

@@ -13,14 +13,20 @@ L.Icon.Default.mergeOptions({
 
 // Tile Layer Configurations (100% Free, Reliable, Zero Watermarks, No API Key Required)
 const TILE_LAYERS = {
-  dark: {
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+  streets: {
+    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
     subdomains: 'abcd',
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     maxZoom: 19,
   },
-  streets: {
-    url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+  positron: {
+    url: 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+    subdomains: 'abcd',
+    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    maxZoom: 19,
+  },
+  dark: {
+    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
     subdomains: 'abcd',
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     maxZoom: 19,
@@ -118,7 +124,7 @@ export default function DelhiMap({
   edges = [],
   selectedNode = null,
   onSelectNode = () => {},
-  mapStyle = 'dark',
+  mapStyle = 'streets',
   layerFilters = {
     road: true,
     hospital: true,
@@ -274,8 +280,8 @@ export default function DelhiMap({
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // Initial Tile Layer (Carto Dark Matter by default)
-    const tileConf = TILE_LAYERS[mapStyle] || TILE_LAYERS.dark;
+    // Initial Tile Layer (CARTO Voyager Light by default)
+    const tileConf = TILE_LAYERS[mapStyle] || TILE_LAYERS.streets;
     const tileLayer = L.tileLayer(tileConf.url, {
       subdomains: tileConf.subdomains || 'abc',
       attribution: tileConf.attribution,
@@ -304,7 +310,7 @@ export default function DelhiMap({
   useEffect(() => {
     if (!mapInstanceRef.current) return;
     const map = mapInstanceRef.current;
-    const tileConf = TILE_LAYERS[mapStyle] || TILE_LAYERS.dark;
+    const tileConf = TILE_LAYERS[mapStyle] || TILE_LAYERS.streets;
 
     if (tileLayerRef.current) {
       map.removeLayer(tileLayerRef.current);
