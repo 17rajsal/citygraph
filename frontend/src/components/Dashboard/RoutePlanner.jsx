@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import './RoutePlanner.css';
 
 /**
- * RoutePlanner - Floating over map on the left, matching Google Maps / reference screenshot:
+ * RoutePlanner - Floating over map on the left, matching Google Maps / reference screenshot (media_1789912155576.jpg):
  * - "Find Emergency Route" header with Close '✕' button
  * - Origin 'A' (e.g. IGI Airport, New Delhi / node_70)
  * - Destination 'B' (e.g. AIIMS, New Delhi / node_1)
  * - Swap button '⇅'
+ * - Demo Scenarios quick chips (AIIMS->IGI, DFS HQ->Kashmere Gate, AIIMS->Noida, Central Sectt->Cyber Hub)
  * - Route Preference Pills: [ Safest (Recommended) ] | [ Fastest ] | [ Avoid Flooded Areas ]
  * - [ Find Route ] primary blue button
  * - Route Options:
@@ -14,6 +15,14 @@ import './RoutePlanner.css';
  *   - Route 2: Fastest Route • 35 min • 17.9 km
  *   - Route 3: Alternative Route • 48 min • 20.4 km
  */
+
+const DEMO_PRESETS = [
+  { id: 'demo-1', label: 'AIIMS → IGI Airport', originId: 'node_1', destId: 'node_70' },
+  { id: 'demo-2', label: 'DFS HQ → Kashmere Gate', originId: 'node_2', destId: 'node_20' },
+  { id: 'demo-3', label: 'AIIMS → Noida', originId: 'node_1', destId: 'node_75' },
+  { id: 'demo-4', label: 'Central Sectt → Cyber Hub', originId: 'node_97', destId: 'node_102' },
+];
+
 export default function RoutePlanner({
   nodes = [],
   activeRoute = null,
@@ -29,9 +38,10 @@ export default function RoutePlanner({
   loading = false,
   isOpen = true,
   onClose = () => {},
+  selectedRouteOption = 1,
+  onSelectRouteOption = () => {},
 }) {
   const [routePreference, setRoutePreference] = useState('safest'); // 'safest' | 'fastest' | 'avoid_flood'
-  const [selectedRouteOption, setSelectedRouteOption] = useState(1);
   const [routeError, setRouteError] = useState('');
 
   const originId = routeOrigin?.id || 'node_70';
@@ -61,6 +71,15 @@ export default function RoutePlanner({
     if (node) onSelectDestination(node);
   };
 
+  const handleSelectDemo = (origId, dstId) => {
+    const origNode = nodes.find((n) => n.id === origId);
+    const dstNode = nodes.find((n) => n.id === dstId);
+    if (origNode) onSelectOrigin(origNode);
+    if (dstNode) onSelectDestination(dstNode);
+    setRouteError('');
+    onCalculateRoute(origId, dstId);
+  };
+
   const handleFindRoute = async () => {
     if (!originId || !destId) return;
     if (originId === destId) {
@@ -82,13 +101,16 @@ export default function RoutePlanner({
   if (!isOpen) return null;
 
   // Real or dynamically computed route options
+  const baseTime = activeRoute?.estimated_time_min || 42;
+  const baseDist = activeRoute?.distance_km || 18.6;
+
   const routeOptions = [
     {
       id: 1,
       name: 'Route 1',
       tag: 'Safest Route',
-      time: activeRoute?.estimated_time_min ? `${activeRoute.estimated_time_min} min` : '42 min',
-      distance: activeRoute?.distance_km ? `${activeRoute.distance_km} km` : '18.6 km',
+      time: `${baseTime} min`,
+      distance: `${baseDist} km`,
       badge: 'Recommended',
       desc: 'Bypasses severe Yamuna surcharge and flooded underpasses.',
     },
@@ -96,8 +118,8 @@ export default function RoutePlanner({
       id: 2,
       name: 'Route 2',
       tag: 'Fastest Route',
-      time: activeRoute?.estimated_time_min ? `${Math.max(activeRoute.estimated_time_min - 7, 18)} min` : '35 min',
-      distance: activeRoute?.distance_km ? `${(activeRoute.distance_km * 0.95).toFixed(1)} km` : '17.9 km',
+      time: `${Math.max(Math.round(baseTime * 0.85), 18)} min`,
+      distance: `${(baseDist * 0.96).toFixed(1)} km`,
       badge: null,
       desc: 'Uses Ring Road arterial with moderate traffic congestion.',
     },
@@ -105,8 +127,8 @@ export default function RoutePlanner({
       id: 3,
       name: 'Route 3',
       tag: 'Alternative Route',
-      time: activeRoute?.estimated_time_min ? `${activeRoute.estimated_time_min + 6} min` : '48 min',
-      distance: activeRoute?.distance_km ? `${(activeRoute.distance_km * 1.1).toFixed(1)} km` : '20.4 km',
+      time: `${Math.round(baseTime * 1.15)} min`,
+      distance: `${(baseDist * 1.1).toFixed(1)} km`,
       badge: null,
       desc: 'Via outer Delhi peripheral expressway network.',
     },
@@ -184,6 +206,27 @@ export default function RoutePlanner({
         </button>
       </div>
 
+      {/* Quick Demo Scenarios Row */}
+      <div className="planner-demo-chips-row">
+        <span className="demo-chip-label">Presets:</span>
+        <div className="demo-chips-scroll">
+          {DEMO_PRESETS.map((p) => {
+            const isMatch = (originId === p.originId && destId === p.destId) || (originId === p.destId && destId === p.originId);
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className={`demo-chip-btn ${isMatch ? 'active' : ''}`}
+                onClick={() => handleSelectDemo(p.originId, p.destId)}
+                title={`Quick route: ${p.label}`}
+              >
+                {p.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Route Preference Selector Pills */}
       <div className="route-pref-section">
         <span className="pref-section-title">Route Preference</span>
@@ -252,7 +295,7 @@ export default function RoutePlanner({
                 key={opt.id}
                 className={`route-option-card ${isSelected ? 'selected' : ''}`}
                 onClick={() => {
-                  setSelectedRouteOption(opt.id);
+                  onSelectRouteOption(opt.id);
                   if (onViewRouteOnMap) onViewRouteOnMap();
                 }}
                 role="button"

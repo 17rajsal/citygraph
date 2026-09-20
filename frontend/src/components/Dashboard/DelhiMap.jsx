@@ -12,7 +12,7 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
 });
 
-// Tile Layer Configurations (100% Free, Reliable, Zero Watermarks, No API Key Required)
+// Tile Layer Configurations (CARTO Voyager for clean, Google Maps-style geography)
 const TILE_LAYERS = {
   streets: {
     url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
@@ -26,12 +26,6 @@ const TILE_LAYERS = {
     attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
     maxZoom: 19,
   },
-  dark: {
-    url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
-    subdomains: 'abcd',
-    attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-    maxZoom: 19,
-  },
   satellite: {
     url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
     attribution: '&copy; Esri, Maxar, Earthstar Geographics',
@@ -39,9 +33,54 @@ const TILE_LAYERS = {
   },
 };
 
-// Delhi Geographic Default Center
-const DELHI_CENTER = [28.6250, 77.2200];
+// Delhi Geographic Default Center (Balanced view across Delhi & NCR)
+const DELHI_CENTER = [28.6180, 77.2000];
 const DEFAULT_ZOOM = 12;
+
+// In-memory cache for fetched OSRM real road geometries
+const osrmGeometryCache = new Map();
+
+// Helper to fetch realistic road-following geometry from OSRM
+async function fetchOsrmRoadGeometry(coordinates) {
+  if (!coordinates || coordinates.length < 2) return null;
+  const cacheKey = coordinates.map((c) => `${c[0].toFixed(4)},${c[1].toFixed(4)}`).join(';');
+  if (osrmGeometryCache.has(cacheKey)) {
+    return osrmGeometryCache.get(cacheKey);
+  }
+
+  try {
+    let waypoints = coordinates;
+    if (coordinates.length > 8) {
+      waypoints = [
+        coordinates[0],
+        ...coordinates.slice(1, -1).filter((_, idx) => idx % Math.ceil(coordinates.length / 5) === 0),
+        coordinates[coordinates.length - 1],
+      ];
+    }
+
+    const coordStr = waypoints.map((c) => `${c[1]},${c[0]}`).join(';');
+    const url = `https://router.project-osrm.org/route/v1/driving/${coordStr}?overview=full&geometries=geojson&alternatives=true`;
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2800);
+
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+
+    if (!response.ok) return null;
+    const data = await response.json();
+    if (!data.routes || !data.routes.length) return null;
+
+    const primaryCoords = data.routes[0].geometry.coordinates.map((pt) => [pt[1], pt[0]]);
+    const altCoords = data.routes.slice(1).map((r) => r.geometry.coordinates.map((pt) => [pt[1], pt[0]]));
+
+    const result = { primary: primaryCoords, alternatives: altCoords };
+    osrmGeometryCache.set(cacheKey, result);
+    return result;
+  } catch {
+    return null;
+  }
+}
 
 // Yamuna River Geographic Spine Coordinates
 const YAMUNA_RIVER_LINE = [
@@ -109,9 +148,17 @@ const MAYUR_VIHAR_FLOOD_POLYGON = [
   [28.590, 77.285],
 ];
 
-// Depth markers directly shown on flood polygons (matching reference screenshot)
+// Flood hazard warning triangle locations (matching reference screenshot)
+const FLOOD_HAZARD_LOCATIONS = [
+  { name: 'Kashmere Gate Bottleneck', coords: [28.672, 77.236] },
+  { name: 'Yamuna Riverbed Surcharge', coords: [28.648, 77.252] },
+  { name: 'ITO Lowlands', coords: [28.622, 77.258] },
+  { name: 'Ring Road Underpass #43', coords: [28.574, 77.248] },
+];
+
+// Depth badges directly rendered on flood polygons
 const FLOOD_DEPTH_MARKERS = [
-  { name: 'Yamuna Riverbed Floodplain', depth: '1.4 m', coords: [28.648, 77.255] },
+  { name: 'Yamuna Riverbed Floodplain', depth: '1.4 m', coords: [28.648, 77.258] },
   { name: 'Kashmere Gate Lowland Catchment', depth: '1.2 m', coords: [28.665, 77.234] },
   { name: 'Ring Road Underpass #43', depth: '0.8 m', coords: [28.575, 77.248] },
   { name: 'Mayur Vihar Spillway Catchment', depth: '0.6 m', coords: [28.605, 77.295] },
@@ -127,7 +174,7 @@ const DELHI_GEO_LABELS = [
   { name: 'GURUGRAM CORRIDOR', coords: [28.4900, 77.0800] },
 ];
 
-// Real-Time Traffic Corridors
+// Real-Time Traffic Corridors (rendered when Live Traffic switch is active)
 const DELHI_TRAFFIC_CORRIDORS = [
   {
     name: 'Barapullah & Ring Road Underpass #43',
@@ -136,7 +183,7 @@ const DELHI_TRAFFIC_CORRIDORS = [
       [28.580, 77.250],
       [28.570, 77.255],
     ],
-    status: 'heavy', // Red
+    status: 'heavy',
     color: '#ef4444',
   },
   {
@@ -146,7 +193,7 @@ const DELHI_TRAFFIC_CORRIDORS = [
       [28.665, 77.235],
       [28.655, 77.240],
     ],
-    status: 'slow', // Orange
+    status: 'slow',
     color: '#f97316',
   },
   {
@@ -156,7 +203,7 @@ const DELHI_TRAFFIC_CORRIDORS = [
       [28.595, 77.190],
       [28.585, 77.185],
     ],
-    status: 'fast', // Green
+    status: 'fast',
     color: '#22c55e',
   },
   {
@@ -166,7 +213,7 @@ const DELHI_TRAFFIC_CORRIDORS = [
       [28.565, 77.120],
       [28.555, 77.085],
     ],
-    status: 'fast', // Green
+    status: 'fast',
     color: '#22c55e',
   },
   {
@@ -176,7 +223,7 @@ const DELHI_TRAFFIC_CORRIDORS = [
       [28.635, 77.222],
       [28.630, 77.225],
     ],
-    status: 'moderate', // Yellow
+    status: 'moderate',
     color: '#eab308',
   },
 ];
@@ -226,8 +273,8 @@ export default function DelhiMap({
   const tileLayerRef = useRef(null);
   const riverLayerRef = useRef(null);
   const floodZonesLayerRef = useRef(null);
-  const edgesLayerRef = useRef(null);
   const trafficLayerRef = useRef(null);
+  const routeAltLayerRef = useRef(null);
   const routeGlowLayerRef = useRef(null);
   const routePolylineRef = useRef(null);
   const routeMarkersRef = useRef(null);
@@ -243,10 +290,11 @@ export default function DelhiMap({
   const [showLayersDropdown, setShowLayersDropdown] = useState(false);
   const [liveTrafficEnabled, setLiveTrafficEnabled] = useState(true);
   const [showRoutePlanner, setShowRoutePlanner] = useState(true);
+  const [selectedRouteOption, setSelectedRouteOption] = useState(1);
 
   // Filter States
-  const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'operational' | 'at_risk' | 'affected' | 'failed'
-  const [riskFilter, setRiskFilter] = useState('all'); // 'all' | 'high' | 'medium' | 'low'
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [riskFilter, setRiskFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
   const [routingAlert, setRoutingAlert] = useState(null);
@@ -346,7 +394,7 @@ export default function DelhiMap({
       .slice(0, 6);
   }, [nodes, searchQuery]);
 
-  // Initialize Leaflet Map
+  // Initialize Leaflet Map (Zero raw NetworkX edge spiderwebs)
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
@@ -367,12 +415,12 @@ export default function DelhiMap({
     }).addTo(map);
     tileLayerRef.current = tileLayer;
 
-    // Layer groups
+    // Layer groups (Notice: NO edgesLayerRef, eliminating all spider-web lines)
     riverLayerRef.current = L.layerGroup().addTo(map);
     floodZonesLayerRef.current = L.layerGroup().addTo(map);
-    edgesLayerRef.current = L.layerGroup().addTo(map);
     trafficLayerRef.current = L.layerGroup().addTo(map);
     geoLabelsLayerRef.current = L.layerGroup().addTo(map);
+    routeAltLayerRef.current = L.layerGroup().addTo(map);
     routeGlowLayerRef.current = L.layerGroup().addTo(map);
     routeMarkersRef.current = L.layerGroup().addTo(map);
     markersLayerRef.current = L.layerGroup().addTo(map);
@@ -443,7 +491,7 @@ export default function DelhiMap({
     });
   }, []);
 
-  // Render Dedicated Flood Risk Zones & Depth Badges
+  // Render Dedicated Flood Risk Zones, Hazard Triangles & Depth Badges
   useEffect(() => {
     if (!mapInstanceRef.current || !floodZonesLayerRef.current) return;
 
@@ -451,31 +499,31 @@ export default function DelhiMap({
 
     if (layerFilters.flood_zones === false) return;
 
-    const primaryFillOpacity = isSimulated ? 0.40 : 0.16;
-    const secondaryFillOpacity = isSimulated ? 0.32 : 0.12;
+    const primaryFillOpacity = isSimulated ? 0.38 : 0.16;
+    const secondaryFillOpacity = isSimulated ? 0.30 : 0.12;
     const primaryColor = isSimulated ? '#0284c7' : '#0369a1';
     const secondaryColor = isSimulated ? '#00f0ff' : '#0284c7';
 
     // 1. Primary Yamuna Floodplain Polygon
     const primaryPolygon = L.polygon(YAMUNA_PRIMARY_FLOOD_POLYGON, {
       color: primaryColor,
-      weight: 2,
+      weight: 1.8,
       fillColor: '#0284c7',
       fillOpacity: primaryFillOpacity,
       className: isSimulated ? 'leaflet-flood-polygon flood-active' : 'leaflet-flood-polygon',
     });
     primaryPolygon.bindTooltip(
       isSimulated
-        ? '⚠️ PRIMARY YAMUNA FLOOD ZONE • ACTIVE 90mm/hr SURCHARGE'
-        : 'Yamuna River 100-Year Floodplain (Baseline Risk)',
+        ? '⚠️ PRIMARY YAMUNA FLOOD ZONE • 1.4m SURCHARGE'
+        : 'Yamuna River 100-Year Floodplain',
       { sticky: true, className: 'flood-tooltip' }
     );
     floodZonesLayerRef.current.addLayer(primaryPolygon);
 
-    // 2. Kashmere Gate / Monastery Market Lowland Depression
+    // 2. Kashmere Gate Lowland Depression
     const kashmereGatePolygon = L.polygon(KASHMERE_GATE_FLOOD_POLYGON, {
       color: secondaryColor,
-      weight: 1.8,
+      weight: 1.6,
       fillColor: '#0369a1',
       fillOpacity: secondaryFillOpacity,
       className: isSimulated ? 'leaflet-flood-polygon flood-active' : 'leaflet-flood-polygon',
@@ -488,17 +536,17 @@ export default function DelhiMap({
     );
     floodZonesLayerRef.current.addLayer(kashmereGatePolygon);
 
-    // 3. Ring Road Underpass #43 & Barapullah Depression
+    // 3. Ring Road Underpass #43 Depression
     const underpassPolygon = L.polygon(RING_ROAD_UNDERPASS_FLOOD_POLYGON, {
       color: secondaryColor,
-      weight: 1.8,
+      weight: 1.6,
       fillColor: '#0369a1',
       fillOpacity: secondaryFillOpacity,
       className: isSimulated ? 'leaflet-flood-polygon flood-active' : 'leaflet-flood-polygon',
     });
     underpassPolygon.bindTooltip(
       isSimulated
-        ? '⚠️ RING ROAD UNDERPASS #43 DEPRESSION • WATERLOGGED'
+        ? '⚠️ RING ROAD UNDERPASS #43 • INUNDATED'
         : 'Barapullah Sluice Inundation Catchment',
       { sticky: true, className: 'flood-tooltip' }
     );
@@ -507,20 +555,30 @@ export default function DelhiMap({
     // 4. Mayur Vihar Trans-Yamuna Retention Catchment
     const mayurViharPolygon = L.polygon(MAYUR_VIHAR_FLOOD_POLYGON, {
       color: secondaryColor,
-      weight: 1.8,
+      weight: 1.6,
       fillColor: '#0284c7',
       fillOpacity: secondaryFillOpacity,
       className: isSimulated ? 'leaflet-flood-polygon flood-active' : 'leaflet-flood-polygon',
     });
-    mayurViharPolygon.bindTooltip(
-      isSimulated
-        ? '⚠️ MAYUR VIHAR FLOODPLAIN SPILLWAY • OVERFLOWING'
-        : 'Mayur Vihar Spillway Catchment',
-      { sticky: true, className: 'flood-tooltip' }
-    );
     floodZonesLayerRef.current.addLayer(mayurViharPolygon);
 
-    // 5. Water Depth Badges matching reference screenshot
+    // 5. Hazard Warning Triangles inside flooded zones (matching reference screenshot)
+    FLOOD_HAZARD_LOCATIONS.forEach((h) => {
+      const hazardIcon = L.divIcon({
+        className: 'custom-hazard-marker-container',
+        html: `
+          <div class="flood-hazard-pin" title="${h.name}">
+            <span>⚠️</span>
+          </div>
+        `,
+        iconSize: [20, 20],
+        iconAnchor: [10, 10],
+      });
+      const marker = L.marker(h.coords, { icon: hazardIcon, interactive: false });
+      floodZonesLayerRef.current.addLayer(marker);
+    });
+
+    // 6. Water Depth Badges
     FLOOD_DEPTH_MARKERS.forEach((zone) => {
       const depthIcon = L.divIcon({
         className: 'custom-flood-depth-container',
@@ -538,39 +596,7 @@ export default function DelhiMap({
     });
   }, [layerFilters.flood_zones, isSimulated]);
 
-  // Render Clean Subtle Road Links (NO dotted red clutter)
-  useEffect(() => {
-    if (!mapInstanceRef.current || !edgesLayerRef.current) return;
-    edgesLayerRef.current.clearLayers();
-
-    if (!layerFilters.road || !edges || !edges.length) return;
-
-    const nodeMap = new Map();
-    nodes.forEach((n) => nodeMap.set(n.id, n));
-
-    edges.forEach((edge) => {
-      const src = nodeMap.get(edge.source);
-      const tgt = nodeMap.get(edge.target);
-
-      if (src && tgt && src.lat && src.lng && tgt.lat && tgt.lng) {
-        const polyline = L.polyline(
-          [
-            [src.lat, src.lng],
-            [tgt.lat, tgt.lng],
-          ],
-          {
-            color: '#94a3b8',
-            weight: 1.4,
-            opacity: 0.28,
-            lineCap: 'round',
-          }
-        );
-        edgesLayerRef.current.addLayer(polyline);
-      }
-    });
-  }, [edges, nodes, layerFilters.road]);
-
-  // Render Real-Time Traffic Corridors when Live Traffic is enabled
+  // Render Real-Time Traffic Corridors when Live Traffic switch is active
   useEffect(() => {
     if (!mapInstanceRef.current || !trafficLayerRef.current) return;
     trafficLayerRef.current.clearLayers();
@@ -593,7 +619,7 @@ export default function DelhiMap({
     });
   }, [liveTrafficEnabled]);
 
-  // Helper to create clean professional HTML markers
+  // Clean, crisp circular HTML markers (No giant blinding halos)
   const createNodeIcon = useCallback(
     (node, isSelected, isOrigin, isDest) => {
       const status = node.status || 'safe';
@@ -601,45 +627,53 @@ export default function DelhiMap({
       const name = (node.name || '').toLowerCase();
       const isMetro = type === 'metro' || name.includes('metro') || name.includes('interchange');
 
-      let statusClass = 'marker-safe';
-      if (status === 'failed') statusClass = 'marker-failed';
-      else if (status === 'affected') statusClass = 'marker-affected';
+      let glyph = '●';
+      let typeClass = 'type-road';
 
-      let typeGlyph = '●';
-      if (type === 'hospital') typeGlyph = '+';
-      else if (type === 'fire_station') typeGlyph = '▲';
-      else if (type === 'drainage') typeGlyph = '■';
-      else if (type === 'transformer') typeGlyph = '⚡';
-      else if (isMetro) typeGlyph = 'Ⓜ';
+      if (type === 'hospital') {
+        glyph = '✚';
+        typeClass = 'type-hospital';
+      } else if (type === 'fire_station') {
+        glyph = '🔥';
+        typeClass = 'type-fire';
+      } else if (isMetro) {
+        glyph = 'Ⓜ';
+        typeClass = 'type-metro';
+      } else if (type === 'drainage') {
+        glyph = '💧';
+        typeClass = 'type-drainage';
+      } else if (type === 'transformer') {
+        glyph = '⚡';
+        typeClass = 'type-transformer';
+      }
 
       const classes = [
-        'delhi-map-marker',
-        statusClass,
-        isMetro ? 'metro' : type,
+        'delhi-clean-marker',
+        typeClass,
+        `status-${status}`,
         isSelected ? 'marker-selected' : '',
-        isOrigin ? 'marker-is-origin' : '',
-        isDest ? 'marker-is-dest' : '',
-        routingMode ? 'marker-routing-active' : '',
+        isOrigin ? 'is-origin' : '',
+        isDest ? 'is-dest' : '',
       ].filter(Boolean).join(' ');
 
       const html = `
         <div class="${classes}">
-          ${status === 'failed' ? '<div class="marker-pulse"></div>' : ''}
-          <div class="marker-core">
-            <span class="marker-icon-glyph">${typeGlyph}</span>
+          ${status === 'failed' ? '<div class="marker-pulse-ring"></div>' : ''}
+          <div class="marker-circle">
+            <span class="marker-glyph">${glyph}</span>
           </div>
         </div>
       `;
 
       return L.divIcon({
-        className: 'custom-delhi-marker-container',
+        className: 'custom-delhi-node-marker',
         html,
-        iconSize: [26, 26],
-        iconAnchor: [13, 13],
+        iconSize: [24, 24],
+        iconAnchor: [12, 12],
         popupAnchor: [0, -14],
       });
     },
-    [routingMode]
+    []
   );
 
   // Render Infrastructure Nodes on Map
@@ -785,11 +819,12 @@ export default function DelhiMap({
     }
   }, [selectedNode]);
 
-  // Render Solid Blue Route Polyline & Circular A/B Pins
+  // Render Real Road-Following Route Line & Navigation Pins with Name Badges
   useEffect(() => {
-    if (!mapInstanceRef.current || !routeGlowLayerRef.current || !routeMarkersRef.current) return;
+    if (!mapInstanceRef.current || !routeGlowLayerRef.current || !routeMarkersRef.current || !routeAltLayerRef.current) return;
 
     routeGlowLayerRef.current.clearLayers();
+    routeAltLayerRef.current.clearLayers();
     routeMarkersRef.current.clearLayers();
 
     if (routePolylineRef.current) {
@@ -801,73 +836,94 @@ export default function DelhiMap({
       return;
     }
 
-    const coords = activeRoute.coordinates;
+    const rawCoords = activeRoute.coordinates;
+    const originName = activeRoute.source?.short_name || activeRoute.source?.name || routeOrigin?.short_name || routeOrigin?.name || 'Origin';
+    const destName = activeRoute.target?.short_name || activeRoute.target?.name || routeDestination?.short_name || routeDestination?.name || 'Destination';
 
-    // Outer white casing line
-    const casingLine = L.polyline(coords, {
-      color: '#ffffff',
-      weight: 8,
-      opacity: 0.95,
-      lineCap: 'round',
-      lineJoin: 'round',
+    let isSubscribed = true;
+
+    // Fetch high-resolution road geometry via OSRM, falling back to safe Dijkstra points
+    fetchOsrmRoadGeometry(rawCoords).then((roadGeom) => {
+      if (!isSubscribed || !mapInstanceRef.current) return;
+
+      const pathCoords = roadGeom?.primary || rawCoords;
+
+      // 1. Draw subtle alternative routes if available
+      if (roadGeom?.alternatives && roadGeom.alternatives.length > 0) {
+        roadGeom.alternatives.forEach((alt) => {
+          const altLine = L.polyline(alt, {
+            color: '#94a3b8',
+            weight: 3.5,
+            opacity: 0.55,
+            lineCap: 'round',
+            lineJoin: 'round',
+          });
+          routeAltLayerRef.current.addLayer(altLine);
+        });
+      }
+
+      // 2. White casing underneath primary route
+      const casingLine = L.polyline(pathCoords, {
+        color: '#ffffff',
+        weight: 9,
+        opacity: 0.95,
+        lineCap: 'round',
+        lineJoin: 'round',
+      });
+      routeGlowLayerRef.current.addLayer(casingLine);
+
+      // 3. Solid Google Maps Royal Blue primary route line
+      const pathLine = L.polyline(pathCoords, {
+        color: '#2563eb',
+        weight: 5.5,
+        opacity: 1.0,
+        lineCap: 'round',
+        lineJoin: 'round',
+      });
+      routeGlowLayerRef.current.addLayer(pathLine);
+      routePolylineRef.current = pathLine;
+
+      // 4. Origin Navigation Pin 'A' with White Name Label Pill (matching reference screenshot)
+      const startPoint = pathCoords[0];
+      const originPinIcon = L.divIcon({
+        className: 'custom-google-nav-pin',
+        html: `
+          <div class="google-nav-pin pin-origin">
+            <div class="pin-circle pin-circle-a"><span>A</span></div>
+            <div class="pin-name-badge">${originName}</div>
+          </div>
+        `,
+        iconSize: [140, 30],
+        iconAnchor: [12, 15],
+      });
+      const originMarker = L.marker(startPoint, { icon: originPinIcon, zIndexOffset: 1200 });
+      routeMarkersRef.current.addLayer(originMarker);
+
+      // 5. Destination Navigation Pin 'B' with White Name Label Pill (matching reference screenshot)
+      const endPoint = pathCoords[pathCoords.length - 1];
+      const destPinIcon = L.divIcon({
+        className: 'custom-google-nav-pin',
+        html: `
+          <div class="google-nav-pin pin-dest">
+            <div class="pin-circle pin-circle-b"><span>B</span></div>
+            <div class="pin-name-badge">${destName}</div>
+          </div>
+        `,
+        iconSize: [140, 30],
+        iconAnchor: [12, 15],
+      });
+      const destMarker = L.marker(endPoint, { icon: destPinIcon, zIndexOffset: 1200 });
+      routeMarkersRef.current.addLayer(destMarker);
+
+      // Fit map bounds to show complete safe corridor
+      const bounds = L.latLngBounds(pathCoords);
+      mapInstanceRef.current.fitBounds(bounds, { padding: [55, 55], maxZoom: 14 });
     });
-    routeGlowLayerRef.current.addLayer(casingLine);
 
-    // Solid Google Maps Royal Blue corridor
-    const pathLine = L.polyline(coords, {
-      color: '#2563eb',
-      weight: 5.2,
-      opacity: 1.0,
-      lineCap: 'round',
-      lineJoin: 'round',
-    });
-    routeGlowLayerRef.current.addLayer(pathLine);
-    routePolylineRef.current = pathLine;
-
-    // Origin Circular Pin 'A'
-    const startCoord = coords[0];
-    const originPinIcon = L.divIcon({
-      className: 'custom-google-pin-container',
-      html: `
-        <div class="google-pin-circle pin-circle-a" title="Route Origin (A)">
-          <span>A</span>
-        </div>
-      `,
-      iconSize: [26, 26],
-      iconAnchor: [13, 13],
-    });
-    const originPin = L.marker(startCoord, { icon: originPinIcon, zIndexOffset: 1200 });
-    routeMarkersRef.current.addLayer(originPin);
-
-    // Destination Circular Pin 'B'
-    const endCoord = coords[coords.length - 1];
-    const destPinIcon = L.divIcon({
-      className: 'custom-google-pin-container',
-      html: `
-        <div class="google-pin-circle pin-circle-b" title="Route Destination (B)">
-          <span>B</span>
-        </div>
-      `,
-      iconSize: [26, 26],
-      iconAnchor: [13, 13],
-    });
-    const destPin = L.marker(endCoord, { icon: destPinIcon, zIndexOffset: 1200 });
-    routeMarkersRef.current.addLayer(destPin);
-
-    // Fit map bounds to show complete corridor
-    const bounds = L.latLngBounds(coords);
-    mapInstanceRef.current.fitBounds(bounds, { padding: [55, 55], maxZoom: 14 });
-  }, [activeRoute]);
-
-  // Fit view to all visible nodes
-  const handleFitNetwork = () => {
-    if (!mapInstanceRef.current || !visibleNodes.length) return;
-    const validCoords = visibleNodes.filter((n) => n.lat && n.lng).map((n) => [n.lat, n.lng]);
-    if (validCoords.length > 0) {
-      const bounds = L.latLngBounds(validCoords);
-      mapInstanceRef.current.fitBounds(bounds, { padding: [40, 40] });
-    }
-  };
+    return () => {
+      isSubscribed = false;
+    };
+  }, [activeRoute, routeOrigin, routeDestination, selectedRouteOption]);
 
   // Toggle Fullscreen
   const handleToggleFullscreen = () => {
@@ -887,9 +943,9 @@ export default function DelhiMap({
 
   return (
     <div className={`delhi-map-container ${isFullscreen ? 'is-fullscreen' : ''}`}>
-      {/* Floating Top Controls Bar Matching Master Reference */}
+      {/* Floating Top Controls Bar Matching Master Reference (media_1789912155576.jpg) */}
       <div className="map-top-bar">
-        {/* Basemap Style Toggle: [ Map ] | [ Satellite ] | [ Terrain ] | [ Graph ] */}
+        {/* Basemap Style Toggle: [ Map ] | [ Satellite ] | [ Terrain ] */}
         <div className="basemap-toggle-pills" role="radiogroup" aria-label="Basemap Style">
           <button
             type="button"
@@ -917,7 +973,7 @@ export default function DelhiMap({
             type="button"
             className={`basemap-pill-btn btn-graph-pill ${centerViewType === 'graph' ? 'active' : ''}`}
             onClick={() => onToggleView(centerViewType === 'map' ? 'graph' : 'map')}
-            title="Toggle Network Topology Graph"
+            title="Switch to Topology Graph View"
           >
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
               <circle cx="18" cy="5" r="3" />
@@ -930,66 +986,7 @@ export default function DelhiMap({
           </button>
         </div>
 
-        {/* Live Delhi Node Search Bar */}
-        <div className="map-search-wrapper">
-          <div className="map-search-input-box">
-            <svg className="search-icon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="8" />
-              <line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <input
-              type="text"
-              className="map-search-input"
-              placeholder="Search Delhi infrastructure..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setShowSearchDropdown(true);
-              }}
-              onFocus={() => setShowSearchDropdown(true)}
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                className="search-clear-btn"
-                onClick={() => {
-                  setSearchQuery('');
-                  setShowSearchDropdown(false);
-                }}
-              >
-                ✕
-              </button>
-            )}
-          </div>
-
-          {showSearchDropdown && searchResults.length > 0 && (
-            <div className="map-search-dropdown">
-              {searchResults.map((n) => (
-                <div
-                  key={n.id}
-                  className="search-result-item"
-                  onClick={() => {
-                    onSelectNode(n);
-                    setShowSearchDropdown(false);
-                    setSearchQuery(n.name || n.id);
-                  }}
-                >
-                  <div className="res-title-row">
-                    <span className="res-name">{n.name || n.id}</span>
-                    <span className={`res-badge status-${n.status || 'safe'}`}>
-                      {(n.status || 'SAFE').toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="res-meta">
-                    <span>{n.type_label || n.type}</span> • <span>Risk: {(Number(n.risk) || 0).toFixed(2)}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Right Top Controls: Filters, Layers, Live Traffic, Fullscreen */}
+        {/* Center / Right Controls: Filters, Layers, Live Traffic, Fullscreen */}
         <div className="map-actions-group">
           {/* Quick Filter Menu Dropdown */}
           <div className="map-filter-wrapper">
@@ -1002,7 +999,7 @@ export default function DelhiMap({
               }}
               title="Filter displayed infrastructure"
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
                 <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
               </svg>
               <span>Filters {activeFiltersCount > 0 ? `(${activeFiltersCount})` : ''}</span>
@@ -1011,7 +1008,7 @@ export default function DelhiMap({
             {showFilterDropdown && (
               <div className="map-filter-popover">
                 <div className="filter-popover-header">
-                  <span className="popover-title">FILTER MAP MARKERS</span>
+                  <span className="popover-title">FILTER INFRASTRUCTURE</span>
                   {activeFiltersCount > 0 && (
                     <button
                       type="button"
@@ -1120,15 +1117,6 @@ export default function DelhiMap({
                   <label className="layers-popover-item">
                     <input
                       type="checkbox"
-                      checked={Boolean(layerFilters.road)}
-                      onChange={() => setLayerFilters((p) => ({ ...p, road: !p.road }))}
-                    />
-                    <span className="layer-dot dot-blue" />
-                    <span>Road Network</span>
-                  </label>
-                  <label className="layers-popover-item">
-                    <input
-                      type="checkbox"
                       checked={Boolean(layerFilters.hospital)}
                       onChange={() => setLayerFilters((p) => ({ ...p, hospital: !p.hospital }))}
                     />
@@ -1176,15 +1164,14 @@ export default function DelhiMap({
             )}
           </div>
 
-          {/* Live Traffic Toggle Switch */}
+          {/* Live Traffic Toggle Switch (matching reference screenshot) */}
           <div
             className={`live-traffic-switch-pill ${liveTrafficEnabled ? 'is-active' : ''}`}
             onClick={() => setLiveTrafficEnabled(!liveTrafficEnabled)}
             role="switch"
             aria-checked={liveTrafficEnabled}
-            title="Toggle Live Traffic Overlay"
+            title="Toggle Live Traffic Flow"
           >
-            <span className="traffic-dot" />
             <span className="traffic-label">Live Traffic</span>
             <div className="switch-track">
               <div className="switch-thumb" />
@@ -1222,6 +1209,8 @@ export default function DelhiMap({
           loading={routingLoading}
           isOpen={showRoutePlanner}
           onClose={() => setShowRoutePlanner(false)}
+          selectedRouteOption={selectedRouteOption}
+          onSelectRouteOption={setSelectedRouteOption}
         />
       ) : (
         <button

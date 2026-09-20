@@ -1189,4 +1189,181 @@
   letter-spacing: 0.3px;
 }
 
+/* Google Maps Style Navigation Pins with Name Badges (matching reference screenshot) */
+.custom-google-nav-pin {
+  background: transparent;
+  border: none;
+}
+
+.google-nav-pin {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.25));
+}
+
+.google-nav-pin .pin-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  border: 2px solid #ffffff;
+  flex-shrink: 0;
+}
+
+.google-nav-pin .pin-circle-a {
+  background: #2563eb;
+}
+
+.google-nav-pin .pin-circle-b {
+  background: #dc2626;
+}
+
+.google-nav-pin .pin-name-badge {
+  background: #ffffff;
+  color: #0f172a;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid #cbd5e1;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+  white-space: nowrap;
+}
+
+/* Flood Hazard Warning Triangle Pins */
+.custom-hazard-marker-container {
+  background: transparent;
+  border: none;
+}
+
+.flood-hazard-pin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.3));
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.flood-hazard-pin:hover {
+  transform: scale(1.3);
+}
+
+/* Clean, Crisp Infrastructure Markers (NO giant blinding glow) */
+.custom-delhi-node-marker {
+  background: transparent;
+  border: none;
+}
+
+.delhi-clean-marker {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.delhi-clean-marker:hover {
+  transform: scale(1.25);
+  z-index: 9999 !important;
+}
+
+.delhi-clean-marker .marker-circle {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 1.5px solid #10b981;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.15);
+}
+
+.delhi-clean-marker .marker-glyph {
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+/* Marker Types */
+.delhi-clean-marker.type-hospital .marker-circle {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.delhi-clean-marker.type-fire .marker-circle {
+  border-color: #f97316;
+  color: #f97316;
+}
+
+.delhi-clean-marker.type-metro .marker-circle {
+  background: #4f46e5;
+  border-color: #ffffff;
+  color: #ffffff;
+}
+
+.delhi-clean-marker.type-drainage .marker-circle {
+  border-color: #0284c7;
+  color: #0284c7;
+}
+
+.delhi-clean-marker.type-transformer .marker-circle {
+  border-color: #eab308;
+  color: #eab308;
+}
+
+.delhi-clean-marker.type-road .marker-circle {
+  width: 14px;
+  height: 14px;
+  border-color: #64748b;
+  background: #64748b;
+  color: #ffffff;
+}
+
+.delhi-clean-marker.type-road .marker-glyph {
+  font-size: 6px;
+}
+
+/* Status Accents */
+.delhi-clean-marker.status-failed .marker-circle {
+  border-color: #ef4444 !important;
+  background: #fef2f2;
+}
+
+.delhi-clean-marker.status-affected .marker-circle {
+  border-color: #f97316 !important;
+  background: #fff7ed;
+}
+
+.delhi-clean-marker.marker-selected .marker-circle {
+  border: 2.5px solid #2563eb !important;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.25), 0 2px 6px rgba(0, 0, 0, 0.2) !important;
+  transform: scale(1.15);
+}
+
+.delhi-clean-marker .marker-pulse-ring {
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.3);
+  animation: pulseFail 1.6s infinite ease-out;
+  pointer-events: none;
+}
+
+
 
