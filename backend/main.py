@@ -755,10 +755,15 @@ def create_city_graph() -> None:
             "short_name": short_name,
             "type_label": type_label,
             "zone": zone,
+            "latitude": lat,
+            "longitude": lng,
             "lat": lat,
             "lng": lng,
+            "risk_score": data["risk"],
+            "load": data["current_load"],
+            "connected_nodes": neighbors,
             "description": description,
-            "metadata_origin": "Synthetic asset metadata",
+            "metadata_origin": "Delhi / NCR Synthetic Infrastructure Network",
             "failure_reason": "Normal operational parameters; within design tolerance.",
             "connected_corridors": neighbors,
         })
@@ -954,6 +959,10 @@ def run_heavy_rain_simulation(rainfall_level: int) -> dict:
             "nodes": safe_route,
         }
     )
+
+    for node_id, data in node_data.items():
+        data["risk_score"] = data["risk"]
+        data["load"] = data["current_load"]
 
     simulation_state["failed_nodes"] = failed_nodes
     simulation_state["affected_nodes"] = list(affected_nodes)

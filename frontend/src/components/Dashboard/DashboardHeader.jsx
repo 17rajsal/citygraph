@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import './DashboardHeader.css';
 
 export default function DashboardHeader({
@@ -16,8 +16,9 @@ export default function DashboardHeader({
   const [searchOpen, setSearchOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [timeString, setTimeString] = useState('');
+  const searchInputRef = useRef(null);
 
-  // Live formatted clock
+  // Live formatted clock matching reference screenshot
   useEffect(() => {
     const updateTime = () => {
       const now = new Date();
@@ -31,14 +32,30 @@ export default function DashboardHeader({
         minute: '2-digit',
         hour12: true,
       });
-      setTimeString(`${datePart} | ${timePart}`);
+      setTimeString(`${datePart} ${timePart}`);
     };
     updateTime();
     const interval = setInterval(updateTime, 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // Search filter
+  // Global Ctrl+K / Cmd+K listener
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+        setSearchOpen(true);
+      } else if (e.key === 'Escape') {
+        setSearchOpen(false);
+        searchInputRef.current?.blur();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Search filter across ID, name, short_name, type, zone, cluster
   useEffect(() => {
     if (!searchTerm.trim()) {
       setSearchResults([]);
@@ -50,9 +67,12 @@ export default function DashboardHeader({
       (n) =>
         (n.name && n.name.toLowerCase().includes(q)) ||
         (n.short_name && n.short_name.toLowerCase().includes(q)) ||
-        n.id.toLowerCase().includes(q) ||
-        (n.zone && n.zone.toLowerCase().includes(q))
-    ).slice(0, 6);
+        (n.id && n.id.toLowerCase().includes(q)) ||
+        (n.type && n.type.toLowerCase().includes(q)) ||
+        (n.type_label && n.type_label.toLowerCase().includes(q)) ||
+        (n.zone && n.zone.toLowerCase().includes(q)) ||
+        (n.description && n.description.toLowerCase().includes(q))
+    ).slice(0, 8);
     setSearchResults(matches);
     setSearchOpen(matches.length > 0);
   }, [searchTerm, nodes]);
@@ -79,25 +99,31 @@ export default function DashboardHeader({
             <option value="central_delhi">Central Delhi (Connaught Place / ITO)</option>
             <option value="south_delhi">South Delhi (AIIMS / Okhla)</option>
             <option value="north_delhi">North Delhi (Wazirabad / Kashmere Gate)</option>
-            <option value="trans_yamuna">Trans-Yamuna (Mayur Vihar / Noida Link)</option>
+            <option value="trans_yamuna">East Delhi / Trans-Yamuna</option>
+            <option value="noida">Noida / Greater Noida Corridor</option>
+            <option value="gurugram">Gurugram Cyber Corridor</option>
+            <option value="ghaziabad">Ghaziabad / GT Road Axis</option>
+            <option value="faridabad">Faridabad Industrial Axis</option>
           </select>
           <span className="dropdown-caret" aria-hidden="true">▾</span>
         </div>
       </div>
 
-      {/* Center: Search Box with live dropdown */}
+      {/* Center: Search Box with live dropdown & Ctrl K badge */}
       <div className="dash-header-center">
         <div className="search-input-wrap">
           <span className="search-icon" aria-hidden="true">🔍</span>
           <input
+            ref={searchInputRef}
             type="text"
             className="search-input"
-            placeholder="Search location, asset or node ID..."
+            placeholder="Search location, asset, or node ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onFocus={() => { if (searchResults.length) setSearchOpen(true); }}
             aria-label="Search Assets"
           />
+          <div className="search-ctrl-badge" title="Press Ctrl+K to search">Ctrl K</div>
           {searchTerm && (
             <button
               type="button"
@@ -111,6 +137,10 @@ export default function DashboardHeader({
           {/* Search suggestions dropdown */}
           {searchOpen && (
             <div className="search-results-dropdown">
+              <div className="dropdown-search-header">
+                <span>Matching Infrastructure Assets ({searchResults.length})</span>
+                <span className="dropdown-esc-hint">ESC to close</span>
+              </div>
               {searchResults.map((item) => (
                 <button
                   key={item.id}
@@ -120,7 +150,7 @@ export default function DashboardHeader({
                 >
                   <div className="result-text">
                     <span className="result-name">{item.name || item.id}</span>
-                    <span className="result-sub">{item.type_label || item.type} &bull; {item.zone || 'Delhi Grid'}</span>
+                    <span className="result-sub">{item.type_label || item.type} &bull; {item.zone || 'Delhi-NCR'}</span>
                   </div>
                   <span className={`result-status-pill status-${item.status || 'safe'}`}>
                     {item.id}
@@ -132,7 +162,7 @@ export default function DashboardHeader({
         </div>
       </div>
 
-      {/* Right: Connection status, Clock & User */}
+      {/* Right: Connection status, Weather, Clock, Notifications & User */}
       <div className="dash-header-right">
         {/* Connection Status Badge */}
         <div className="connection-status-container">
@@ -153,11 +183,30 @@ export default function DashboardHeader({
           )}
         </div>
 
-        {/* Live Clock */}
-        <div className="header-clock" title="System Local Time">
-          <span className="clock-icon" aria-hidden="true">🕒</span>
-          <span className="clock-text">{timeString || 'Sep 19, 2026 | 12:24 AM'}</span>
+        {/* Weather Indicator */}
+        <div className="header-weather" title="Monsoon Telemetry: Delhi Meteorological Station">
+          <span className="weather-icon" aria-hidden="true">🌧</span>
+          <div className="weather-text">
+            <span className="weather-temp">28°C</span>
+            <span className="weather-desc">Light Rain</span>
+          </div>
         </div>
+
+        {/* Live Clock */}
+        <div className="header-clock" title="System Operations Clock">
+          <span className="clock-text">{timeString || 'Sep 20, 2026 5:58 PM'}</span>
+        </div>
+
+        {/* Notifications Icon with Unread Badge */}
+        <button
+          type="button"
+          className="header-notification-btn"
+          aria-label="View notifications"
+          title="4 active system advisories"
+        >
+          <span className="bell-icon" aria-hidden="true">🔔</span>
+          <span className="notification-badge">4</span>
+        </button>
 
         {/* User Profile */}
         <div className="header-user-cluster">
@@ -168,10 +217,10 @@ export default function DashboardHeader({
             aria-expanded={profileOpen}
           >
             <div className="user-avatar-circle">
-              {user?.full_name ? user.full_name[0].toUpperCase() : 'R'}
+              {user?.full_name ? user.full_name[0].toUpperCase() : 'C'}
             </div>
             <div className="user-text-col">
-              <span className="user-name-text">{user?.full_name || 'Raj Salonia'}</span>
+              <span className="user-name-text">{user?.full_name || 'City Operations Lead'}</span>
               <span className="user-role-text">{user?.role || 'Incident Commander'}</span>
             </div>
           </button>
@@ -179,8 +228,8 @@ export default function DashboardHeader({
           {profileOpen && (
             <div className="profile-dropdown-menu">
               <div className="profile-dropdown-info">
-                <strong>{user?.full_name || 'Raj Salonia'}</strong>
-                <span>{user?.email || 'admin@citygraph.org'}</span>
+                <strong>{user?.full_name || 'City Operations Lead'}</strong>
+                <span>{user?.email || 'commander@delhi-emergency.gov.in'}</span>
                 <span className="profile-role-tag">{user?.role || 'Incident Commander'}</span>
               </div>
               <div className="profile-divider"></div>

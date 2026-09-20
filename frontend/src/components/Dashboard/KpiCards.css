@@ -1,189 +1,287 @@
-/* KpiCards.css - Smart City Intelligence KPI Row (Premium Light Theme) */
+/* ==========================================================================
+   KPI Cards Styles - Master Visual Match
+   Elevated White Cards, Crisp Circular Progress, India Gate Banner
+   ========================================================================== */
+.kpi-master-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
 
-.kpi-cards-grid {
+.kpi-primary-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-@media (max-width: 1380px) {
-  .kpi-cards-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-  .kpi-card.highest-risk-card {
-    grid-column: span 2;
-  }
-}
-
-@media (max-width: 900px) {
-  .kpi-cards-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .kpi-card.highest-risk-card {
-    grid-column: span 2;
-  }
-}
-
-@media (max-width: 580px) {
-  .kpi-cards-grid {
-    grid-template-columns: 1fr;
-  }
-  .kpi-card.highest-risk-card {
-    grid-column: span 1;
-  }
+  grid-template-columns: repeat(4, 1fr) 1.2fr;
+  gap: 14px;
+  align-items: stretch;
 }
 
 .kpi-card {
   background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
   padding: 14px 16px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.kpi-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: #cbd5e1;
+  gap: 10px;
+  box-shadow: var(--shadow-card);
+  transition: all 0.15s ease;
 }
 
 .kpi-card:hover {
-  transform: translateY(-2px);
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--border-strong);
 }
 
-.kpi-card.clickable {
-  cursor: pointer;
+.kpi-card-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.kpi-card.card-alert::before {
-  background: #ef4444;
+.kpi-icon-wrap {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.kpi-card.card-alert {
-  border-color: #fecaca;
-  background: #ffffff;
+.icon-blue {
+  background: #EFF6FF;
+  color: #1677FF;
+  border: 1px solid #DBEAFE;
 }
 
-.kpi-card.card-alert:hover {
-  border-color: #ef4444;
-  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.12);
+.icon-green {
+  background: var(--status-green-bg);
+  color: var(--status-green);
+  border: 1px solid var(--status-green-border);
 }
 
-.kpi-card.card-warning::before {
-  background: #f97316;
+.icon-red {
+  background: var(--status-red-bg);
+  color: var(--status-red);
+  border: 1px solid var(--status-red-border);
 }
 
-.kpi-card.card-warning {
-  border-color: #fed7aa;
-  background: #ffffff;
+.icon-orange {
+  background: var(--status-orange-bg);
+  color: var(--status-orange);
+  border: 1px solid var(--status-orange-border);
 }
 
-.kpi-card.card-warning:hover {
-  border-color: #f97316;
-  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.12);
+.kpi-card-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
 }
 
-.kpi-card.card-primary::before {
-  background: #0284c7;
-}
-
-.kpi-card.card-success::before {
-  background: #10b981;
-}
-
-.kpi-card-header {
+.kpi-card-content {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
 }
 
-.kpi-label {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: #64748b;
-  text-transform: uppercase;
-}
-
-.kpi-icon {
-  font-size: 16px;
-}
-
-.kpi-value-row {
+.kpi-numbers {
   display: flex;
-  align-items: baseline;
-  gap: 8px;
-  margin-bottom: 4px;
+  flex-direction: column;
+  line-height: 1.1;
 }
 
-.kpi-value {
+.kpi-stat-value {
   font-size: 26px;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--text-primary);
   letter-spacing: -0.5px;
-  line-height: 1;
 }
 
-.kpi-value.alert-val {
-  color: #dc2626;
-}
-
-.kpi-value.warning-val {
-  color: #ea580c;
-}
-
-.kpi-value.primary-val {
-  color: #0284c7;
-}
-
-.kpi-value.success-val {
-  color: #059669;
-}
-
-.kpi-subtext {
-  font-size: 11px;
-  color: #475569;
+.kpi-stat-sub {
+  font-size: 11.5px;
   font-weight: 500;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+/* Progress Rings */
+.kpi-progress-ring {
+  position: relative;
+  width: 54px;
+  height: 54px;
   display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.kpi-badge {
+.kpi-progress-ring svg {
+  transform: rotate(-90deg);
+  width: 54px;
+  height: 54px;
+}
+
+.ring-bg {
+  fill: none;
+  stroke: #F1F5F9;
+  stroke-width: 4;
+}
+
+.ring-fill {
+  fill: none;
+  stroke-width: 4.5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fill-blue { stroke: #1677FF; }
+.fill-green { stroke: #10B981; }
+.fill-red { stroke: #EF4444; }
+.fill-orange { stroke: #F97316; }
+
+.ring-label {
+  position: absolute;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+/* Alert States */
+.kpi-card.is-alert-red {
+  border-color: #FECACA;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFF5F5 100%);
+}
+
+.kpi-card.is-alert-amber {
+  border-color: #FED7AA;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FFFBF5 100%);
+}
+
+/* Feature Banner Card */
+.kpi-banner-card {
+  background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+  border-radius: var(--radius-card);
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.15);
+  color: #ffffff;
+}
+
+.banner-art-overlay {
+  position: absolute;
+  right: 0;
+  bottom: -4px;
+  width: 130px;
+  opacity: 0.25;
+  pointer-events: none;
+}
+
+.india-gate-silhouette {
+  width: 100%;
+  height: auto;
+}
+
+.banner-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.banner-badge {
   font-size: 9px;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  color: #38BDF8;
+  background: rgba(56, 189, 248, 0.15);
+  border: 1px solid rgba(56, 189, 248, 0.3);
   padding: 2px 6px;
   border-radius: 4px;
+  align-self: flex-start;
 }
 
-.kpi-badge.badge-operational {
-  background: #ecfdf5;
-  color: #059669;
-  border: 1px solid #a7f3d0;
+.banner-heading {
+  margin: 2px 0 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.3px;
 }
 
-.kpi-badge.badge-flooded {
-  background: #fef2f2;
-  color: #dc2626;
-  border: 1px solid #fecaca;
+.banner-subtext {
+  margin: 0;
+  font-size: 11px;
+  color: #94A3B8;
+  font-weight: 500;
 }
 
-.kpi-badge.badge-affected {
-  background: #fff7ed;
-  color: #ea580c;
-  border: 1px solid #fed7aa;
+/* Row 2: Secondary Telemetry Ribbon */
+.kpi-secondary-ribbon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.02);
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.sec-kpi-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.sec-kpi-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.sec-kpi-val {
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.sec-kpi-divider {
+  width: 1px;
+  height: 14px;
+  background: var(--border-subtle);
+}
+
+/* Color helpers */
+.text-blue { color: var(--color-primary); }
+.text-green { color: var(--status-green); }
+.text-red { color: var(--status-red); }
+.text-orange { color: var(--status-orange); }
+
+@media (max-width: 1280px) {
+  .kpi-primary-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .kpi-banner-card {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 768px) {
+  .kpi-primary-grid {
+    grid-template-columns: 1fr;
+  }
+  .kpi-banner-card {
+    grid-column: span 1;
+  }
+  .sec-kpi-divider {
+    display: none;
+  }
 }

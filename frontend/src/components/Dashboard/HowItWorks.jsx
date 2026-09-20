@@ -7,43 +7,51 @@ export default function HowItWorks() {
   const steps = [
     {
       stepNumber: '01',
-      title: 'Digital Twin Mapping',
-      icon: '🗺️',
-      summary: '108 Multi-Modal Assets',
-      description: 'Comprehensive geographic modeling of Delhi NCR infrastructure including Level-1 Trauma Hospitals, Fire Commands, Drainage Sluices, 400kV Substations, Metro Interchanges, and Arterial Expressways.',
-      badge: 'GIS Graph Model',
+      title: 'Infrastructure Data',
+      icon: '🏛️',
+      summary: '108 Monitored Assets',
+      description: 'Geospatial synthetic modeling of hospitals, fire stations, drainage pumps, substations, roads, and metro interchanges.',
+      badge: 'Data Layer',
     },
     {
       stepNumber: '02',
-      title: 'Climate Hazard Injection',
-      icon: '🌧️',
-      summary: 'Monsoon Cloudburst Simulation',
-      description: 'Simulates intense precipitation events (50mm–120mm/hr) across the Yamuna River Basin, stress-testing stormwater regulator intake limits against historic flood thresholds.',
-      badge: 'Hydrological Stress',
+      title: 'Graph Construction',
+      icon: '🕸️',
+      summary: 'NetworkX Topology',
+      description: 'Creates a connected multi-modal network with 237 physical, transit, and electrical interdependency corridors.',
+      badge: 'Graph Engine',
     },
     {
       stepNumber: '03',
-      title: 'Cascading Failure Propagation',
-      icon: '⚡',
-      summary: 'Multi-Sector Interdependency',
-      description: 'Drainage pump overtopping triggers road submergence. Flooded arterial corridors isolate power substations and halt metro feeder access, demonstrating realistic cross-network failure spirals.',
-      badge: 'Interdependency Engine',
+      title: 'Hazard Injection',
+      icon: '🌧️',
+      summary: 'Monsoon Cloudburst',
+      description: 'Simulates 90 mm/hr cloudburst rainfall triggering volumetric intake exceedance in Yamuna stormwater sluices.',
+      badge: 'Climate Stress',
     },
     {
       stepNumber: '04',
-      title: 'Risk Scoring & Bottlenecks',
-      icon: '🎯',
-      summary: 'Dynamic Asset Vulnerability',
-      description: 'NetworkX graph algorithms continuously calculate node risk scores and betweenness centrality, isolating critical single-point failure assets (such as Ring Road Underpass #43).',
-      badge: 'Vulnerability Isolation',
+      title: 'Cascading Failure Simulation',
+      icon: '⚡',
+      summary: 'Cross-Sector Spiral',
+      description: 'Sluice backflows submerge arterial roads, cut substation feeders, and bottleneck critical transit interchanges.',
+      badge: 'Percolation Model',
     },
     {
       stepNumber: '05',
-      title: 'Dynamic Safe Routing',
-      icon: '🧭',
-      summary: 'Dijkstra Emergency Dispatch',
-      description: 'Calculates real-time risk-penalized shortest corridors between emergency response stations and hospitals, guaranteeing ambulances and fire rescue avoid submerged arterial corridors.',
-      badge: 'Fail-Safe Navigation',
+      title: 'Risk Analysis',
+      icon: '📊',
+      summary: 'Dynamic Risk Scoring',
+      description: 'Calculates continuous node vulnerability, identifying single points of failure like Ring Road Underpass #43.',
+      badge: 'Risk Analytics',
+    },
+    {
+      stepNumber: '06',
+      title: 'Emergency Routing',
+      icon: '🚑',
+      summary: 'Dijkstra Safe Corridor',
+      description: 'Finds the safest emergency evacuation and dispatch path, automatically bypassing inundated hazard corridors.',
+      badge: 'Fail-Safe Routing',
     },
   ];
 
@@ -51,9 +59,9 @@ export default function HowItWorks() {
     <section className="how-it-works-panel" aria-label="How CityGraph Works">
       <div className="how-header-row" onClick={() => setIsExpanded(!isExpanded)} role="button" tabIndex={0}>
         <div className="how-header-left">
-          <span className="how-pill-tag">ARCHITECTURE & ENGINE</span>
-          <h2 className="how-main-title">How CityGraph Works</h2>
-          <span className="how-subtitle">5-Step Cascading Resilience & Emergency Dispatch Architecture</span>
+          <span className="how-pill-tag">HOW CITYGRAPH WORKS</span>
+          <h2 className="how-main-title">6-Step Urban Resilience Intelligence Architecture</h2>
+          <span className="how-subtitle">From climate hazard injection to real-time emergency routing</span>
         </div>
         <div className="how-header-right">
           <button
@@ -65,7 +73,7 @@ export default function HowItWorks() {
               setIsExpanded(!isExpanded);
             }}
           >
-            {isExpanded ? 'Collapse Engine Guide ▴' : 'Explore Engine Guide ▾'}
+            {isExpanded ? 'Collapse Guide ▴' : 'Expand Guide ▾'}
           </button>
         </div>
       </div>

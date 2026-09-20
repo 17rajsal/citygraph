@@ -2186,6 +2186,47 @@ button, select, input {
 }
 
 /* Historical & Nepal Mode Wrappers */
+.historical-page-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.historical-page-subnav {
+  display: flex;
+  gap: 10px;
+  padding: 4px 8px;
+  border-bottom: 1px solid #dce6f2;
+}
+
+.subnav-pill {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1.5px solid #dce6f2;
+  background: #ffffff;
+  color: #475569;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.subnav-pill:hover {
+  background: #f8fbff;
+  border-color: #1677ff;
+  color: #1677ff;
+}
+
+.subnav-pill.is-active {
+  background: #eff6ff;
+  border-color: #1677ff;
+  color: #1677ff;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(22, 119, 255, 0.12);
+}
+
 .historical-mode-wrapper,
 .nepal-mode-wrapper {
   width: 100%;

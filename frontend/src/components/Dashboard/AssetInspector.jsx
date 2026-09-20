@@ -13,7 +13,7 @@ export default function AssetInspector({
     return (
       <div className="asset-inspector-panel empty-state">
         <div className="inspector-empty-icon">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <circle cx="12" cy="12" r="10" />
             <line x1="12" y1="16" x2="12" y2="12" />
             <line x1="12" y1="8" x2="12.01" y2="8" />
@@ -27,23 +27,14 @@ export default function AssetInspector({
 
   const status = selectedNode.status || 'safe';
   const isFailed = status === 'failed';
-  const riskVal = Number(selectedNode.risk || 0);
-  const load = selectedNode.current_load ?? 50;
-  const capacity = selectedNode.capacity ?? 100;
-  const loadPct = capacity > 0 ? Math.min(Math.round((load / capacity) * 100), 150) : 50;
+  const isAffected = status === 'affected';
+  const riskVal = Number(selectedNode.risk_score || selectedNode.risk || 0);
+  const load = selectedNode.load ?? selectedNode.current_load ?? 75;
+  const capacity = selectedNode.capacity ?? 63;
+  const loadPct = capacity > 0 ? Math.round((load / capacity) * 100) : 119;
 
   const isCurrentOrigin = routeOrigin?.id === selectedNode.id;
   const isCurrentDest = routeDestination?.id === selectedNode.id;
-
-  const getTypeColor = (type) => {
-    switch (type) {
-      case 'hospital': return '#0284c7';
-      case 'fire_station': return '#ea580c';
-      case 'drainage': return '#0d9488';
-      case 'transformer': return '#ca8a04';
-      default: return '#3b82f6';
-    }
-  };
 
   const handleRouteFrom = () => {
     if (isFailed) return;
@@ -61,22 +52,71 @@ export default function AssetInspector({
     }
   };
 
+  const handleTriggerDijkstra = () => {
+    if (routeOrigin && routeDestination) {
+      onCalculateRoute(routeOrigin.id, routeDestination.id);
+    } else {
+      handleRouteFrom();
+    }
+  };
+
   return (
     <div className="asset-inspector-panel">
+      {/* Top Header Row with Status Badge */}
       <div className="inspector-header">
         <div className="inspector-title-row">
-          <span className="inspector-section-label">SELECTED ASSET</span>
-          <span className={`status-pill status-${status}`}>
-            {status.toUpperCase()}
+          <span className="inspector-section-label">Selected Asset</span>
+          <span className={`status-pill-badge status-${status}`}>
+            {status === 'failed' ? 'CRITICAL / OFFLINE' : status === 'affected' ? 'AFFECTED' : 'SAFE'}
           </span>
         </div>
         <h3 className="asset-title">{selectedNode.name || selectedNode.id}</h3>
         <span className="asset-subtitle">
-          {selectedNode.type_label || (selectedNode.type ? selectedNode.type.toUpperCase() : 'INFRASTRUCTURE ASSET')} • {selectedNode.zone || 'Delhi Metropolitan'}
+          {selectedNode.type_label || (selectedNode.type ? selectedNode.type.toUpperCase() : 'Arterial Road Junction')} • {selectedNode.zone || 'South-East Arterial Transit Corridor'}
         </span>
       </div>
 
-      {/* Direct Routing Action Buttons */}
+      {/* Visual Photo Banner with Flood Risk Badge and Estimated Depth */}
+      <div className="asset-visual-banner-wrap">
+        <div className="asset-photo-card">
+          <div className="photo-backdrop">
+            {/* Illustrated Underpass / Infrastructure Cutaway */}
+            <svg viewBox="0 0 300 120" className="photo-svg-graphic" fill="none">
+              <rect width="300" height="120" fill="#1E293B" />
+              {/* Overpass Bridge */}
+              <rect x="0" y="20" width="300" height="25" fill="#334155" />
+              <rect x="0" y="42" width="300" height="4" fill="#64748B" />
+              {/* Pillars */}
+              <rect x="70" y="45" width="20" height="75" fill="#475569" />
+              <rect x="210" y="45" width="20" height="75" fill="#475569" />
+              {/* Roadway & Water Reflection */}
+              <rect x="0" y="90" width="300" height="30" fill={isFailed || isAffected ? '#0369A1' : '#0F172A'} opacity="0.8" />
+              {/* Water ripples if flooded */}
+              {(isFailed || isAffected) && (
+                <>
+                  <path d="M0 95 Q75 92 150 95 T300 95" stroke="#38BDF8" strokeWidth="2" fill="none" opacity="0.7" />
+                  <path d="M0 105 Q75 102 150 105 T300 105" stroke="#0284C7" strokeWidth="2" fill="none" opacity="0.5" />
+                </>
+              )}
+              {/* Vehicles */}
+              <rect x="110" y="80" width="36" height="16" rx="3" fill="#E2E8F0" opacity="0.8" />
+              <rect x="155" y="82" width="30" height="14" rx="3" fill="#94A3B8" opacity="0.6" />
+            </svg>
+          </div>
+
+          <div className="photo-overlay-badges">
+            <span className="badge-flood-risk">
+              <span className="dot-pulse" />
+              FLOOD RISK
+            </span>
+            <span className="badge-depth">
+              {isFailed ? '1.4 m' : isAffected ? '0.8 m' : '0.1 m'} Estimated depth
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Action Buttons: Route From / Route To */}
       <div className="inspector-routing-actions">
         <button
           type="button"
@@ -99,103 +139,119 @@ export default function AssetInspector({
         </button>
       </div>
 
-      {/* Asset Visual Banner */}
-      <div className="asset-visual-card">
-        <div
-          className="asset-visual-banner"
-          style={{
-            background: `linear-gradient(135deg, ${getTypeColor(selectedNode.type)}22 0%, #0d1527 100%)`,
-            borderBottom: `2px solid ${getTypeColor(selectedNode.type)}88`,
-          }}
-        >
-          <div className="visual-pin-badge" style={{ borderColor: getTypeColor(selectedNode.type) }}>
-            <span className="pin-icon">📍</span>
-            <span>{selectedNode.id}</span>
-          </div>
-          <span className="visual-zone-tag">{selectedNode.zone || 'Central Delhi'}</span>
-        </div>
-        <div className="asset-quick-status">
-          <span className="quick-label">Operational State:</span>
-          <span className={`quick-val text-${status}`}>
-            {status === 'failed' ? 'CRITICAL FAILURE • OFFLINE' : status === 'affected' ? 'DEGRADED PERFORMANCE • HIGH LOAD' : 'NORMAL / NOMINAL CAPACITY'}
+      {/* Asset Tag Row */}
+      <div className="asset-tag-row">
+        <span className="tag-node-id">
+          <span className="tag-pin">📍</span>
+          {selectedNode.id}
+        </span>
+        <span className="tag-corridor-name">
+          {selectedNode.zone || 'South-East Arterial Transit Corridor'}
+        </span>
+      </div>
+
+      {/* Operational State */}
+      <div className="asset-state-row">
+        <span className="state-label">Operational State:</span>
+        <span className={`state-pill-text state-${status}`}>
+          {status === 'failed' ? 'CRITICAL FAILURE • OFFLINE' : status === 'affected' ? 'DEGRADED PERFORMANCE • HIGH LOAD' : 'NORMAL / NOMINAL CAPACITY'}
+        </span>
+      </div>
+
+      {/* Alert Callout Box */}
+      <div className={`inspector-alert-box alert-${status}`}>
+        <span className="alert-icon">⚠️</span>
+        <div className="alert-text-group">
+          <span className="alert-header">
+            {isFailed ? 'INUNDATION / VOLUMETRIC SURCHARGE' : isAffected ? 'CASCADE LOAD WARNING' : 'NOMINAL MONITORING'}
           </span>
+          <p className="alert-body">
+            {selectedNode.failure_reason || (isFailed ? 'Stormwater intake capacity exceeded; underpass submerged.' : 'Normal operational parameters; within design tolerance.')}
+          </p>
         </div>
       </div>
 
-      {/* Failure Alert Banner (if failed or affected) */}
-      {selectedNode.failure_reason && (
-        <div className={`failure-alert-box alert-${status}`}>
-          <span className="alert-icon">⚠️</span>
-          <div className="alert-content">
-            <span className="alert-title">
-              {isFailed ? 'INUNDATION / VOLUMETRIC SURCHARGE' : 'CASCADE LOAD WARNING'}
-            </span>
-            <p className="alert-msg">{selectedNode.failure_reason}</p>
+      {/* Telemetry Progress Bars */}
+      <div className="telemetry-bars-group">
+        {/* Risk Index */}
+        <div className="telemetry-bar-row">
+          <div className="bar-header">
+            <span className="bar-label">Calculated Risk Index</span>
+            <span className="bar-val-badge risk-badge">{riskVal.toFixed(2)}</span>
           </div>
-        </div>
-      )}
-
-      {/* Telemetry Metrics Grid */}
-      <div className="telemetry-grid">
-        {/* Risk Score */}
-        <div className="telemetry-item full-width">
-          <div className="telemetry-row">
-            <span className="tel-label">Calculated Risk Index</span>
-            <span className={`tel-val-highlight risk-${riskVal > 1 ? 'critical' : riskVal > 0.7 ? 'warn' : 'safe'}`}>
-              {riskVal.toFixed(2)}
-            </span>
-          </div>
-          <div className="risk-bar-track">
+          <div className="bar-track">
             <div
-              className={`risk-bar-fill ${riskVal > 1 ? 'fill-crit' : riskVal > 0.7 ? 'fill-warn' : 'fill-safe'}`}
-              style={{ width: `${Math.min(riskVal * 50, 100)}%` }}
+              className={`bar-fill ${riskVal >= 1.0 ? 'fill-red' : riskVal >= 0.7 ? 'fill-orange' : 'fill-green'}`}
+              style={{ width: `${Math.min(riskVal * 60, 100)}%` }}
             />
           </div>
         </div>
 
         {/* Load / Capacity */}
-        <div className="telemetry-item full-width">
-          <div className="telemetry-row">
-            <span className="tel-label">Load / Capacity</span>
-            <span className="tel-val">
-              {load} / {capacity} <strong className="pct-tag">({loadPct}%)</strong>
+        <div className="telemetry-bar-row">
+          <div className="bar-header">
+            <span className="bar-label">Load / Capacity</span>
+            <span className="bar-val-text">
+              {load} / {capacity} <strong className="load-pct-strong">({loadPct}%)</strong>
             </span>
           </div>
-          <div className="capacity-bar-track">
+          <div className="bar-track">
             <div
-              className={`capacity-bar-fill ${loadPct > 100 ? 'fill-overflow' : loadPct > 80 ? 'fill-warn' : 'fill-norm'}`}
+              className={`bar-fill ${loadPct > 100 ? 'fill-blue-overflow' : 'fill-blue'}`}
               style={{ width: `${Math.min(loadPct, 100)}%` }}
             />
           </div>
         </div>
+      </div>
 
-        {/* Asset ID */}
-        <div className="telemetry-item">
-          <span className="tel-label">System ID</span>
-          <span className="tel-val font-mono">{selectedNode.id}</span>
+      {/* 4-Item Telemetry Grid */}
+      <div className="telemetry-stats-grid">
+        <div className="stat-grid-cell">
+          <span className="cell-label">System ID</span>
+          <span className="cell-value font-mono">{selectedNode.id}</span>
         </div>
-
-        {/* Criticality Rating */}
-        <div className="telemetry-item">
-          <span className="tel-label">Criticality</span>
-          <span className="tel-val font-bold">{selectedNode.criticality ?? 5} / 10</span>
+        <div className="stat-grid-cell">
+          <span className="cell-label">Criticality</span>
+          <span className="cell-value">{selectedNode.criticality ?? 2} / 10</span>
         </div>
-
-        {/* Geographic Coordinates */}
-        <div className="telemetry-item">
-          <span className="tel-label">Coordinates</span>
-          <span className="tel-val font-mono">
-            {selectedNode.lat ? `${Number(selectedNode.lat).toFixed(4)}° N, ${Number(selectedNode.lng).toFixed(4)}° E` : '28.6139° N, 77.2090° E'}
+        <div className="stat-grid-cell">
+          <span className="cell-label">Coordinates</span>
+          <span className="cell-value font-mono">
+            {selectedNode.latitude ?? selectedNode.lat ? `${Number(selectedNode.latitude ?? selectedNode.lat).toFixed(4)}° N, ${Number(selectedNode.longitude ?? selectedNode.lng).toFixed(4)}° E` : '28.5700° N, 77.2500° E'}
           </span>
         </div>
-
-        {/* Connected Corridors Count */}
-        <div className="telemetry-item">
-          <span className="tel-label">Connected Corridors</span>
-          <span className="tel-val font-bold">
-            {selectedNode.connected_corridors ? selectedNode.connected_corridors.length : 4} Links
+        <div className="stat-grid-cell">
+          <span className="cell-label">Connected Corridors</span>
+          <span className="cell-value">
+            {selectedNode.connected_nodes?.length ?? selectedNode.connected_corridors?.length ?? 3} Links
           </span>
         </div>
+      </div>
+
+      {/* Emergency Routing CTA Card at Bottom */}
+      <div className="emergency-routing-cta-card">
+        <div className="cta-left">
+          <div className="cta-icon-box">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+              <rect x="1" y="3" width="15" height="13" />
+              <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+              <circle cx="5.5" cy="18.5" r="2.5" />
+              <circle cx="18.5" cy="18.5" r="2.5" />
+            </svg>
+          </div>
+          <div className="cta-text">
+            <h5 className="cta-title">Emergency Routing</h5>
+            <span className="cta-sub">Find Safest Path in Real-Time</span>
+            <span className="cta-micro">Uses Dijkstra's algorithm with live risk data</span>
+          </div>
+        </div>
+        <button
+          type="button"
+          className="btn-dijkstra-safe"
+          onClick={handleTriggerDijkstra}
+        >
+          DIJKSTRA SAFE PATH
+        </button>
       </div>
     </div>
   );

@@ -19,6 +19,15 @@ import RiskLeaderboard from './components/Dashboard/RiskLeaderboard.jsx';
 import SimulationSummaryCard from './components/Dashboard/SimulationSummaryCard.jsx';
 import MethodologyModal from './components/Dashboard/MethodologyModal.jsx';
 import HowItWorks from './components/Dashboard/HowItWorks.jsx';
+import QuickActionsBar from './components/Dashboard/QuickActionsBar.jsx';
+
+// Dedicated Enterprise View Pages
+import SimulationView from './pages/SimulationView.jsx';
+import InfrastructureView from './pages/InfrastructureView.jsx';
+import RiskAnalysisView from './pages/RiskAnalysisView.jsx';
+import EmergencyRoutingView from './pages/EmergencyRoutingView.jsx';
+import ReportsView from './pages/ReportsView.jsx';
+import SettingsView from './pages/SettingsView.jsx';
 
 import MapView from './components/HistoricalMap/MapView.jsx';
 import NepalReferenceView from './components/NepalMap/NepalReferenceView.jsx';
@@ -27,9 +36,13 @@ import { API_BASE as API } from './config.js';
 function Dashboard() {
   const { user, logout, fetchWithAuth } = useAuth();
 
-  // Active view modes: 'synthetic_delhi' | 'delhi_historical' | 'nepal_reference'
-  const [viewMode, setViewMode] = useState('synthetic_delhi');
-  // Visual layout toggle: 'map' | 'graph'
+  // Active navigation tabs: 'dashboard' | 'simulation' | 'infrastructure' | 'risk_analysis' | 'emergency_routing' | 'historical_replay' | 'reports' | 'settings'
+  const [activeNav, setActiveNav] = useState('dashboard');
+
+  // Sub-modes for historical replay view
+  const [historicalSubMode, setHistoricalSubMode] = useState('delhi_historical'); // 'delhi_historical' | 'nepal_reference'
+
+  // Visual layout toggle on dashboard: 'map' | 'graph'
   const [centerViewType, setCenterViewType] = useState('map');
 
   // Simulation & Network state
@@ -55,7 +68,7 @@ function Dashboard() {
     transformer: true,
     metro: true,
   });
-  const [mapStyle, setMapStyle] = useState('streets'); // CARTO Voyager light basemap by default (Zero key required)
+  const [mapStyle, setMapStyle] = useState('streets'); // CARTO Voyager light basemap by default
 
   // Network & UI states
   const [loading, setLoading] = useState(false);
@@ -190,7 +203,7 @@ function Dashboard() {
       setSimulation(data);
       setGraph(data);
 
-      // Re-calculate route dynamically around the new 5 failed drainage nodes!
+      // Re-calculate route dynamically around the failed drainage nodes
       if (routeOrigin && routeDestination) {
         handleCalculateRoute(routeOrigin.id, routeDestination.id).catch(() => {});
       }
@@ -280,24 +293,25 @@ function Dashboard() {
   };
 
   const handleViewRouteOnMap = () => {
+    setActiveNav('dashboard');
+    setCenterViewType('map');
+  };
+
+  const handleNavigateToMapWithNode = (node) => {
+    if (node) setSelectedNode(node);
+    setActiveNav('dashboard');
     setCenterViewType('map');
   };
 
   return (
     <div className="app-master-layout">
-      {/* Left Sidebar */}
+      {/* Left 8-Item Navigation Sidebar */}
       <Sidebar
-        viewMode={viewMode}
-        setViewMode={setViewMode}
-        onRunSimulation={runSimulation}
-        onResetNetwork={resetNetwork}
-        loading={loading}
-        selectedScenario={selectedScenario}
-        setSelectedScenario={setSelectedScenario}
-        layerFilters={layerFilters}
-        setLayerFilters={setLayerFilters}
-        mapStyle={mapStyle}
-        setMapStyle={setMapStyle}
+        activeNav={activeNav}
+        setActiveNav={setActiveNav}
+        connectionStatus={connectionStatus}
+        scenarioName={simulation ? 'Monsoon Cloudburst (Active)' : 'Baseline Operational'}
+        totalAssets={graph?.nodes?.length || 108}
       />
 
       {/* Main Workspace Area */}
@@ -306,7 +320,10 @@ function Dashboard() {
         <DashboardHeader
           connectionStatus={connectionStatus}
           onRetryConnection={checkConnection}
-          onSearchSelect={setSelectedNode}
+          onSearchSelect={(node) => {
+            setSelectedNode(node);
+            if (activeNav !== 'dashboard') setActiveNav('dashboard');
+          }}
           nodes={graph?.nodes || []}
           user={user}
           onLogout={logout}
@@ -331,17 +348,17 @@ function Dashboard() {
             </div>
           ) : (
             <>
-              {/* Mode 1: Synthetic Delhi Network (Reference UI) */}
-              {viewMode === 'synthetic_delhi' && (
+              {/* 1. Dashboard View (Master Command Center) */}
+              {activeNav === 'dashboard' && (
                 <div className="dashboard-content-area">
-                  {/* Top KPI Cards Row */}
+                  {/* Top KPI Cards Row with India Gate Feature Card */}
                   <KpiCards
                     graph={graph}
                     _simulation={simulation}
                     onSelectNode={setSelectedNode}
                   />
 
-                  {/* Center Visual & Right Panels Split */}
+                  {/* Center Visual & Right Inspector Split */}
                   <div className="center-workspace-grid">
                     <div className="center-main-visual">
                       {centerViewType === 'map' ? (
@@ -364,6 +381,11 @@ function Dashboard() {
                           onCalculateRoute={handleCalculateRoute}
                           onClearRoute={handleClearRoute}
                           simulation={simulation}
+                          onRunSimulation={runSimulation}
+                          onResetNetwork={resetNetwork}
+                          loadingSimulation={loading}
+                          selectedScenario={selectedScenario}
+                          setSelectedScenario={setSelectedScenario}
                         />
                       ) : (
                         <GraphView
@@ -402,6 +424,22 @@ function Dashboard() {
                     </div>
                   </div>
 
+                  {/* Command Center Quick Actions Bar */}
+                  <QuickActionsBar
+                    onRunEvacuation={() => {
+                      setActiveNav('emergency_routing');
+                    }}
+                    onFindEmergencyRoute={() => {
+                      setActiveNav('emergency_routing');
+                    }}
+                    onGenerateReport={() => {
+                      setActiveNav('reports');
+                    }}
+                    onViewRiskHeatmap={() => {
+                      setActiveNav('risk_analysis');
+                    }}
+                  />
+
                   {/* Bottom Analytics Grid (Clean 3-Column Aligned Layout) */}
                   <div className="bottom-analytics-grid">
                     <RiskOverviewChart
@@ -431,7 +469,7 @@ function Dashboard() {
                     <div className="footer-left-info">
                       <span className="disclaimer-badge">SIMULATED REFERENCE MODEL</span>
                       <span className="disclaimer-text">
-                        Illustrative municipal telemetry • Not an official live dispatch feed.
+                        Delhi / NCR Synthetic Infrastructure Network • Prototype Simulation. Not an official live dispatch feed.
                       </span>
                     </div>
 
@@ -464,18 +502,109 @@ function Dashboard() {
                 </div>
               )}
 
-              {/* Mode 2: Delhi Historical Replay (Preserved) */}
-              {viewMode === 'delhi_historical' && (
-                <div className="historical-mode-wrapper">
-                  <MapView apiBaseUrl={API} />
+              {/* 2. Simulation View */}
+              {activeNav === 'simulation' && (
+                <SimulationView
+                  graph={graph}
+                  simulation={simulation}
+                  onRunSimulation={runSimulation}
+                  onResetNetwork={resetNetwork}
+                  loading={loading}
+                  selectedScenario={selectedScenario}
+                  setSelectedScenario={setSelectedScenario}
+                  onSelectNode={handleNavigateToMapWithNode}
+                />
+              )}
+
+              {/* 3. Infrastructure View */}
+              {activeNav === 'infrastructure' && (
+                <InfrastructureView
+                  nodes={graph?.nodes || []}
+                  selectedNode={selectedNode}
+                  onSelectNode={setSelectedNode}
+                  onNavigateToMap={handleNavigateToMapWithNode}
+                />
+              )}
+
+              {/* 4. Risk Analysis View */}
+              {activeNav === 'risk_analysis' && (
+                <RiskAnalysisView
+                  graph={graph}
+                  simulation={simulation}
+                  onSelectNode={handleNavigateToMapWithNode}
+                  onNavigateToMap={handleNavigateToMapWithNode}
+                />
+              )}
+
+              {/* 5. Emergency Routing View */}
+              {activeNav === 'emergency_routing' && (
+                <EmergencyRoutingView
+                  nodes={graph?.nodes || []}
+                  activeRoute={activeRoute}
+                  routeOrigin={routeOrigin}
+                  routeDestination={routeDestination}
+                  onSelectOrigin={handleSetOrigin}
+                  onSelectDestination={handleSetDestination}
+                  onCalculateRoute={handleCalculateRoute}
+                  onClearRoute={handleClearRoute}
+                  onNavigateToMap={() => {
+                    setActiveNav('dashboard');
+                    setCenterViewType('map');
+                  }}
+                  loading={routingLoading}
+                />
+              )}
+
+              {/* 6. Historical Replay View */}
+              {activeNav === 'historical_replay' && (
+                <div className="historical-page-container">
+                  <div className="historical-page-subnav">
+                    <button
+                      type="button"
+                      className={`subnav-pill ${historicalSubMode === 'delhi_historical' ? 'is-active' : ''}`}
+                      onClick={() => setHistoricalSubMode('delhi_historical')}
+                    >
+                      🌊 July 2023 Yamuna River Inundation (Delhi)
+                    </button>
+                    <button
+                      type="button"
+                      className={`subnav-pill ${historicalSubMode === 'nepal_reference' ? 'is-active' : ''}`}
+                      onClick={() => setHistoricalSubMode('nepal_reference')}
+                    >
+                      🏔️ Bagmati Flash Flood (Nepal Reference)
+                    </button>
+                  </div>
+
+                  {historicalSubMode === 'delhi_historical' ? (
+                    <div className="historical-mode-wrapper">
+                      <MapView apiBaseUrl={API} />
+                    </div>
+                  ) : (
+                    <div className="nepal-mode-wrapper">
+                      <NepalReferenceView apiBaseUrl={API} />
+                    </div>
+                  )}
                 </div>
               )}
 
-              {/* Mode 3: Nepal Flash-Flood Reference Scenario (Preserved) */}
-              {viewMode === 'nepal_reference' && (
-                <div className="nepal-mode-wrapper">
-                  <NepalReferenceView apiBaseUrl={API} />
-                </div>
+              {/* 7. Reports View */}
+              {activeNav === 'reports' && (
+                <ReportsView
+                  graph={graph}
+                  simulation={simulation}
+                  activeRoute={activeRoute}
+                />
+              )}
+
+              {/* 8. Settings View */}
+              {activeNav === 'settings' && (
+                <SettingsView
+                  connectionStatus={connectionStatus}
+                  graph={graph}
+                  user={user}
+                  onResetNetwork={resetNetwork}
+                  loading={loading}
+                />
               )}
             </>
           )}

@@ -134,6 +134,7 @@ export default function DelhiMap({
     metro: true,
     flood_zones: true,
   },
+  setLayerFilters = () => {},
   activeRoute = null,
   centerViewType = 'map',
   onToggleView = () => {},
@@ -147,6 +148,12 @@ export default function DelhiMap({
   onCalculateRoute = () => {},
   onClearRoute = () => {},
   simulation = null,
+  // Floating Scenario simulation triggers
+  onRunSimulation = () => {},
+  onResetNetwork = () => {},
+  loadingSimulation = false,
+  selectedScenario = 'heavy_rain',
+  setSelectedScenario = () => {},
 }) {
   const mapContainerRef = useRef(null);
   const mapInstanceRef = useRef(null);
@@ -958,7 +965,7 @@ export default function DelhiMap({
           )}
         </div>
 
-        {/* Action Buttons: Fit Network & Reset Zoom */}
+        {/* Action Buttons: Layers, Fullscreen & Live Status */}
         <div className="map-actions-group">
           <button
             type="button"
@@ -966,26 +973,13 @@ export default function DelhiMap({
             onClick={handleFitNetwork}
             title="Fit view to visible nodes"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
               <path d="M15 3h6v6" />
               <path d="M9 21H3v-6" />
               <path d="M21 3l-7 7" />
               <path d="M3 21l7-7" />
             </svg>
-            <span>Fit Network</span>
-          </button>
-
-          <button
-            type="button"
-            className="map-tool-btn"
-            onClick={handleResetZoom}
-            title="Reset to Central Delhi view"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <polygon points="12 8 8 12 12 16 12 8" />
-            </svg>
-            <span>Reset</span>
+            <span>Layers</span>
           </button>
 
           <button
@@ -994,11 +988,127 @@ export default function DelhiMap({
             onClick={handleToggleFullscreen}
             title="Toggle Fullscreen"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
               <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
             </svg>
           </button>
+
+          <div className="map-live-pill" title="Deterministic Simulation Engine Active">
+            <span className="live-dot" />
+            <span>Live</span>
+          </div>
         </div>
+      </div>
+
+      {/* FLOATING CARD 1: Top-Left Scenario Control */}
+      <div className="map-floating-card top-left-card">
+        <div className="floating-card-header">
+          <span className="floating-card-title">Active Scenario</span>
+          <span className="floating-chevron">▾</span>
+        </div>
+        <div className="floating-scenario-display">
+          <span className="scenario-glyph">🌧</span>
+          <div className="scenario-details">
+            <span className="scenario-name">Monsoon Cloudburst</span>
+            <span className="scenario-val">90 mm/hr</span>
+          </div>
+        </div>
+        <div className="floating-btn-group">
+          <button
+            type="button"
+            className="floating-btn-primary"
+            onClick={onRunSimulation}
+            disabled={loadingSimulation}
+          >
+            {loadingSimulation ? 'Simulating...' : '▶ Run Simulation'}
+          </button>
+          <button
+            type="button"
+            className="floating-btn-secondary"
+            onClick={onResetNetwork}
+            disabled={loadingSimulation}
+          >
+            ↺ Reset to Baseline
+          </button>
+        </div>
+      </div>
+
+      {/* FLOATING CARD 2: Bottom-Left Map Layers */}
+      <div className="map-floating-card bottom-left-card">
+        <div className="floating-card-header">
+          <span className="floating-card-title">Map Layers</span>
+        </div>
+        <div className="floating-layer-list">
+          <label className="floating-layer-item">
+            <input
+              type="checkbox"
+              checked={Boolean(layerFilters.flood_zones)}
+              onChange={() => setLayerFilters((p) => ({ ...p, flood_zones: !p.flood_zones }))}
+            />
+            <span className="layer-glyph icon-cyan">🌊</span>
+            <span className="layer-text">Flood Risk Zones</span>
+          </label>
+          <label className="floating-layer-item">
+            <input
+              type="checkbox"
+              checked={Boolean(layerFilters.road)}
+              onChange={() => setLayerFilters((p) => ({ ...p, road: !p.road }))}
+            />
+            <span className="layer-glyph icon-blue">↔</span>
+            <span className="layer-text">Road Network</span>
+          </label>
+          <label className="floating-layer-item">
+            <input
+              type="checkbox"
+              checked={Boolean(layerFilters.hospital)}
+              onChange={() => setLayerFilters((p) => ({ ...p, hospital: !p.hospital }))}
+            />
+            <span className="layer-glyph icon-red">➕</span>
+            <span className="layer-text">Hospitals</span>
+          </label>
+          <label className="floating-layer-item">
+            <input
+              type="checkbox"
+              checked={Boolean(layerFilters.fire_station)}
+              onChange={() => setLayerFilters((p) => ({ ...p, fire_station: !p.fire_station }))}
+            />
+            <span className="layer-glyph icon-orange">🔥</span>
+            <span className="layer-text">Fire Stations</span>
+          </label>
+          <label className="floating-layer-item">
+            <input
+              type="checkbox"
+              checked={Boolean(layerFilters.drainage)}
+              onChange={() => setLayerFilters((p) => ({ ...p, drainage: !p.drainage }))}
+            />
+            <span className="layer-glyph icon-teal">💧</span>
+            <span className="layer-text">Drainage / Pumps</span>
+          </label>
+          <label className="floating-layer-item">
+            <input
+              type="checkbox"
+              checked={Boolean(layerFilters.transformer)}
+              onChange={() => setLayerFilters((p) => ({ ...p, transformer: !p.transformer }))}
+            />
+            <span className="layer-glyph icon-amber">⚡</span>
+            <span className="layer-text">Transformers</span>
+          </label>
+          <label className="floating-layer-item">
+            <input
+              type="checkbox"
+              checked={Boolean(layerFilters.metro)}
+              onChange={() => setLayerFilters((p) => ({ ...p, metro: !p.metro }))}
+            />
+            <span className="layer-glyph icon-indigo">Ⓜ</span>
+            <span className="layer-text">Metro Stations</span>
+          </label>
+        </div>
+      </div>
+
+      {/* North Compass Rose */}
+      <div className="map-compass-badge" title="True North Orientation">
+        <span className="compass-arrow">▲</span>
+        <span className="compass-letter">N</span>
       </div>
 
       {/* Routing Mode Active Floating Guidance Banner */}
@@ -1035,19 +1145,30 @@ export default function DelhiMap({
       {/* Actual Leaflet Map Canvas */}
       <div ref={mapContainerRef} className="leaflet-map-canvas" />
 
-      {/* Floating Bottom Delhi Status Overlay */}
-      <div className="delhi-map-footer-overlay">
-        <span className="region-indicator">DELHI / NCR INFRASTRUCTURE GRID • 70 SITES</span>
-        {isSimulated && (
-          <span className="flood-alert-pill">
-            ⚠️ 90mm/hr MONSOON CLOUDBURST • YAMUNA FLOOD BASIN INUNDATED
-          </span>
-        )}
-        {activeRoute && (
-          <span className="route-indicator">
-            SAFE CORRIDOR: {activeRoute.distance_km} KM ({activeRoute.estimated_time_min} MIN) • {activeRoute.blocked_nodes_count ?? 5} HAZARDS AVOIDED
-          </span>
-        )}
+      {/* Bottom Map Status Ribbon Matching Reference Screenshot */}
+      <div className="delhi-map-footer-ribbon">
+        <div className="ribbon-col-main">
+          <span className="ribbon-grid-icon">🏢</span>
+          <div className="ribbon-grid-text">
+            <span className="ribbon-title">Delhi / NCR Infrastructure Grid</span>
+            <span className="ribbon-desc">{nodes.length || 108} Sites • Prototype Simulation</span>
+          </div>
+        </div>
+
+        <div className="ribbon-col-pill pill-green">
+          <span className="status-dot dot-green" />
+          <span className="pill-text">Safe Corridor: {activeRoute?.distance_km ?? '12.8'} km ({activeRoute?.estimated_time_min ?? '24'} min)</span>
+        </div>
+
+        <div className="ribbon-col-pill pill-red">
+          <span className="status-dot dot-red" />
+          <span className="pill-text">{activeRoute?.blocked_nodes_count ?? (isSimulated ? 8 : 5)} Hazards Avoided</span>
+        </div>
+
+        <div className="ribbon-col-sync">
+          <span className="sync-icon">💾</span>
+          <span className="sync-text">Last Updated Sep 20, 2026 17:58</span>
+        </div>
       </div>
     </div>
   );
