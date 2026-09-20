@@ -284,6 +284,7 @@ export default function DelhiMap({
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [currentZoom, setCurrentZoom] = useState(DEFAULT_ZOOM);
 
   // Top Popovers & Controls
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
@@ -343,7 +344,7 @@ export default function DelhiMap({
     };
   }, [nodes, routeOrigin, routeDestination, onSelectNode, onSetOrigin, onSetDestination, onCalculateRoute]);
 
-  // Filter nodes by Layer checkboxes AND top Filter dropdowns
+  // Filter nodes by Layer checkboxes AND top Filter dropdowns with Zoom-aware decluttering
   const visibleNodes = useMemo(() => {
     return nodes.filter((node) => {
       const type = node.type || 'road';
@@ -381,9 +382,20 @@ export default function DelhiMap({
         if (riskFilter === 'low' && r >= 0.5) return false;
       }
 
+      // 5. Intelligent decluttering at normal zoom (<= 12):
+      // Keep all critical facilities (Hospitals, Fire, Metro, Drainage, Power, Failed/Affected, Selected/Origin/Dest).
+      // Filter ordinary road junctions to avoid cluttering the basemap.
+      if (currentZoom <= 12 && !isMetro && type === 'road') {
+        const isFocus = node.id === selectedNode?.id || node.id === routeOrigin?.id || node.id === routeDestination?.id;
+        const isHazard = node.status === 'failed' || node.status === 'affected';
+        if (!isFocus && !isHazard && (node.criticality || 0) < 8) {
+          return false;
+        }
+      }
+
       return true;
     });
-  }, [nodes, layerFilters, typeFilter, statusFilter, riskFilter]);
+  }, [nodes, layerFilters, typeFilter, statusFilter, riskFilter, currentZoom, selectedNode, routeOrigin, routeDestination]);
 
   // Autocomplete search filtering
   const searchResults = useMemo(() => {
@@ -394,7 +406,14 @@ export default function DelhiMap({
       .slice(0, 6);
   }, [nodes, searchQuery]);
 
-  // Initialize Leaflet Map (Zero raw NetworkX edge spiderwebs)
+  // Initialize Leaflet Map with STRICT Leaflet Panes for Layer Order:
+  // 1. basemap (tilePane, z=200)
+  // 2. water/flood polygons (floodPane, z=350)
+  // 3. traffic (trafficPane, z=380)
+  // 4. route alternatives (routeAltPane, z=400)
+  // 5. route primary (routePrimaryPane, z=420)
+  // 6. infrastructure markers (infraMarkerPane, z=500)
+  // 7. A/B pins & name labels (navPinPane, z=600)
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
@@ -405,7 +424,29 @@ export default function DelhiMap({
       attributionControl: false,
     });
 
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    // Track map zoom for responsive marker decluttering
+    map.on('zoomend', () => {
+      setCurrentZoom(map.getZoom());
+    });
+
+    // Create custom panes for strict layer hierarchy
+    const floodPane = map.createPane('floodPane');
+    floodPane.style.zIndex = '350';
+
+    const trafficPane = map.createPane('trafficPane');
+    trafficPane.style.zIndex = '380';
+
+    const routeAltPane = map.createPane('routeAltPane');
+    routeAltPane.style.zIndex = '400';
+
+    const routePrimaryPane = map.createPane('routePrimaryPane');
+    routePrimaryPane.style.zIndex = '420';
+
+    const infraMarkerPane = map.createPane('infraMarkerPane');
+    infraMarkerPane.style.zIndex = '500';
+
+    const navPinPane = map.createPane('navPinPane');
+    navPinPane.style.zIndex = '600';
 
     const initialTileConf = TILE_LAYERS[mapStyle] || TILE_LAYERS.streets;
     const tileLayer = L.tileLayer(initialTileConf.url, {
@@ -415,7 +456,7 @@ export default function DelhiMap({
     }).addTo(map);
     tileLayerRef.current = tileLayer;
 
-    // Layer groups (Notice: NO edgesLayerRef, eliminating all spider-web lines)
+    // Layer groups added to map
     riverLayerRef.current = L.layerGroup().addTo(map);
     floodZonesLayerRef.current = L.layerGroup().addTo(map);
     trafficLayerRef.current = L.layerGroup().addTo(map);
@@ -466,6 +507,7 @@ export default function DelhiMap({
       opacity: 0.35,
       lineCap: 'round',
       lineJoin: 'round',
+      pane: 'floodPane',
     });
     riverLayerRef.current.addLayer(riverCasing);
 
@@ -475,6 +517,7 @@ export default function DelhiMap({
       opacity: 0.85,
       lineCap: 'round',
       lineJoin: 'round',
+      pane: 'floodPane',
     });
     riverLayerRef.current.addLayer(riverCore);
 
@@ -486,12 +529,12 @@ export default function DelhiMap({
         iconSize: [120, 20],
         iconAnchor: [60, 10],
       });
-      const marker = L.marker(hub.coords, { icon: labelIcon, interactive: false });
+      const marker = L.marker(hub.coords, { icon: labelIcon, interactive: false, pane: 'infraMarkerPane' });
       geoLabelsLayerRef.current.addLayer(marker);
     });
   }, []);
 
-  // Render Dedicated Flood Risk Zones, Hazard Triangles & Depth Badges
+  // Render Dedicated Flood Risk Zones, Hazard Triangles & Depth Badges (in floodPane)
   useEffect(() => {
     if (!mapInstanceRef.current || !floodZonesLayerRef.current) return;
 
@@ -511,6 +554,7 @@ export default function DelhiMap({
       fillColor: '#0284c7',
       fillOpacity: primaryFillOpacity,
       className: isSimulated ? 'leaflet-flood-polygon flood-active' : 'leaflet-flood-polygon',
+      pane: 'floodPane',
     });
     primaryPolygon.bindTooltip(
       isSimulated
@@ -527,6 +571,7 @@ export default function DelhiMap({
       fillColor: '#0369a1',
       fillOpacity: secondaryFillOpacity,
       className: isSimulated ? 'leaflet-flood-polygon flood-active' : 'leaflet-flood-polygon',
+      pane: 'floodPane',
     });
     kashmereGatePolygon.bindTooltip(
       isSimulated
@@ -543,6 +588,7 @@ export default function DelhiMap({
       fillColor: '#0369a1',
       fillOpacity: secondaryFillOpacity,
       className: isSimulated ? 'leaflet-flood-polygon flood-active' : 'leaflet-flood-polygon',
+      pane: 'floodPane',
     });
     underpassPolygon.bindTooltip(
       isSimulated
@@ -559,6 +605,7 @@ export default function DelhiMap({
       fillColor: '#0284c7',
       fillOpacity: secondaryFillOpacity,
       className: isSimulated ? 'leaflet-flood-polygon flood-active' : 'leaflet-flood-polygon',
+      pane: 'floodPane',
     });
     floodZonesLayerRef.current.addLayer(mayurViharPolygon);
 
@@ -574,7 +621,7 @@ export default function DelhiMap({
         iconSize: [20, 20],
         iconAnchor: [10, 10],
       });
-      const marker = L.marker(h.coords, { icon: hazardIcon, interactive: false });
+      const marker = L.marker(h.coords, { icon: hazardIcon, interactive: false, pane: 'floodPane' });
       floodZonesLayerRef.current.addLayer(marker);
     });
 
@@ -591,12 +638,12 @@ export default function DelhiMap({
         iconSize: [64, 22],
         iconAnchor: [32, 11],
       });
-      const marker = L.marker(zone.coords, { icon: depthIcon, interactive: false });
+      const marker = L.marker(zone.coords, { icon: depthIcon, interactive: false, pane: 'floodPane' });
       floodZonesLayerRef.current.addLayer(marker);
     });
   }, [layerFilters.flood_zones, isSimulated]);
 
-  // Render Real-Time Traffic Corridors when Live Traffic switch is active
+  // Render Real-Time Traffic Corridors (in trafficPane, z=380)
   useEffect(() => {
     if (!mapInstanceRef.current || !trafficLayerRef.current) return;
     trafficLayerRef.current.clearLayers();
@@ -610,6 +657,7 @@ export default function DelhiMap({
         opacity: 0.85,
         lineCap: 'round',
         lineJoin: 'round',
+        pane: 'trafficPane',
       });
       line.bindTooltip(`Traffic: ${corridor.name} (${corridor.status.toUpperCase()})`, {
         sticky: true,
@@ -619,7 +667,7 @@ export default function DelhiMap({
     });
   }, [liveTrafficEnabled]);
 
-  // Clean, crisp circular HTML markers (No giant blinding halos)
+  // Clean, crisp circular HTML markers (in infraMarkerPane, z=500)
   const createNodeIcon = useCallback(
     (node, isSelected, isOrigin, isDest) => {
       const status = node.status || 'safe';
@@ -676,7 +724,7 @@ export default function DelhiMap({
     []
   );
 
-  // Render Infrastructure Nodes on Map
+  // Render Infrastructure Nodes on Map (in infraMarkerPane)
   useEffect(() => {
     if (!mapInstanceRef.current || !markersLayerRef.current) return;
 
@@ -690,7 +738,7 @@ export default function DelhiMap({
       const isDest = routeDestination && routeDestination.id === node.id;
 
       const icon = createNodeIcon(node, isSelected, isOrigin, isDest);
-      const marker = L.marker([node.lat, node.lng], { icon });
+      const marker = L.marker([node.lat, node.lng], { icon, pane: 'infraMarkerPane' });
 
       const statusLabel = (node.status || 'SAFE').toUpperCase();
       const isFailed = node.status === 'failed';
@@ -846,45 +894,57 @@ export default function DelhiMap({
     fetchOsrmRoadGeometry(rawCoords).then((roadGeom) => {
       if (!isSubscribed || !mapInstanceRef.current) return;
 
-      const pathCoords = roadGeom?.primary || rawCoords;
+      const allRoutes = [
+        roadGeom?.primary || rawCoords,
+        ...(roadGeom?.alternatives || []),
+      ];
 
-      // 1. Draw subtle alternative routes if available
-      if (roadGeom?.alternatives && roadGeom.alternatives.length > 0) {
-        roadGeom.alternatives.forEach((alt) => {
-          const altLine = L.polyline(alt, {
-            color: '#94a3b8',
-            weight: 3.5,
-            opacity: 0.55,
-            lineCap: 'round',
-            lineJoin: 'round',
-          });
-          routeAltLayerRef.current.addLayer(altLine);
+      // Determine active primary vs subtle alternatives based on selectedRouteOption (1, 2, 3)
+      const primaryIdx = Math.min(selectedRouteOption - 1, allRoutes.length - 1);
+      const activePath = allRoutes[primaryIdx] || allRoutes[0];
+
+      // 1. Draw subtle alternative routes in routeAltPane (z-index 400)
+      allRoutes.forEach((routeCoords, idx) => {
+        if (idx === primaryIdx) return;
+        const altLine = L.polyline(routeCoords, {
+          color: '#94a3b8',
+          weight: 3.5,
+          opacity: 0.55,
+          lineCap: 'round',
+          lineJoin: 'round',
+          pane: 'routeAltPane',
         });
-      }
+        altLine.on('click', () => {
+          setSelectedRouteOption(idx + 1);
+        });
+        routeAltLayerRef.current.addLayer(altLine);
+      });
 
-      // 2. White casing underneath primary route
-      const casingLine = L.polyline(pathCoords, {
+      // 2. White casing underneath primary route in routePrimaryPane (z-index 420)
+      const casingLine = L.polyline(activePath, {
         color: '#ffffff',
         weight: 9,
         opacity: 0.95,
         lineCap: 'round',
         lineJoin: 'round',
+        pane: 'routePrimaryPane',
       });
       routeGlowLayerRef.current.addLayer(casingLine);
 
-      // 3. Solid Google Maps Royal Blue primary route line
-      const pathLine = L.polyline(pathCoords, {
+      // 3. Solid Google Maps Royal Blue primary route line in routePrimaryPane (z-index 420)
+      const pathLine = L.polyline(activePath, {
         color: '#2563eb',
         weight: 5.5,
         opacity: 1.0,
         lineCap: 'round',
         lineJoin: 'round',
+        pane: 'routePrimaryPane',
       });
       routeGlowLayerRef.current.addLayer(pathLine);
       routePolylineRef.current = pathLine;
 
-      // 4. Origin Navigation Pin 'A' with White Name Label Pill (matching reference screenshot)
-      const startPoint = pathCoords[0];
+      // 4. Origin Navigation Pin 'A' with White Name Label Pill in navPinPane (z-index 600)
+      const startPoint = activePath[0];
       const originPinIcon = L.divIcon({
         className: 'custom-google-nav-pin',
         html: `
@@ -896,11 +956,11 @@ export default function DelhiMap({
         iconSize: [140, 30],
         iconAnchor: [12, 15],
       });
-      const originMarker = L.marker(startPoint, { icon: originPinIcon, zIndexOffset: 1200 });
+      const originMarker = L.marker(startPoint, { icon: originPinIcon, zIndexOffset: 1200, pane: 'navPinPane' });
       routeMarkersRef.current.addLayer(originMarker);
 
-      // 5. Destination Navigation Pin 'B' with White Name Label Pill (matching reference screenshot)
-      const endPoint = pathCoords[pathCoords.length - 1];
+      // 5. Destination Navigation Pin 'B' with White Name Label Pill in navPinPane (z-index 600)
+      const endPoint = activePath[activePath.length - 1];
       const destPinIcon = L.divIcon({
         className: 'custom-google-nav-pin',
         html: `
@@ -912,11 +972,11 @@ export default function DelhiMap({
         iconSize: [140, 30],
         iconAnchor: [12, 15],
       });
-      const destMarker = L.marker(endPoint, { icon: destPinIcon, zIndexOffset: 1200 });
+      const destMarker = L.marker(endPoint, { icon: destPinIcon, zIndexOffset: 1200, pane: 'navPinPane' });
       routeMarkersRef.current.addLayer(destMarker);
 
       // Fit map bounds to show complete safe corridor
-      const bounds = L.latLngBounds(pathCoords);
+      const bounds = L.latLngBounds(activePath);
       mapInstanceRef.current.fitBounds(bounds, { padding: [55, 55], maxZoom: 14 });
     });
 
@@ -924,6 +984,24 @@ export default function DelhiMap({
       isSubscribed = false;
     };
   }, [activeRoute, routeOrigin, routeDestination, selectedRouteOption]);
+
+  // Floating Right Controls: Zoom in, Zoom out, Locate/Fit Route
+  const handleZoomIn = () => {
+    mapInstanceRef.current?.zoomIn();
+  };
+
+  const handleZoomOut = () => {
+    mapInstanceRef.current?.zoomOut();
+  };
+
+  const handleLocateRoute = () => {
+    if (!mapInstanceRef.current) return;
+    if (activeRoute?.coordinates && activeRoute.coordinates.length >= 2) {
+      mapInstanceRef.current.fitBounds(L.latLngBounds(activeRoute.coordinates), { padding: [55, 55], maxZoom: 14 });
+    } else {
+      mapInstanceRef.current.setView(DELHI_CENTER, DEFAULT_ZOOM, { animate: true });
+    }
+  };
 
   // Toggle Fullscreen
   const handleToggleFullscreen = () => {
@@ -1226,6 +1304,51 @@ export default function DelhiMap({
           <span>Find Route</span>
         </button>
       )}
+
+      {/* Floating Right Google Maps Controls: Zoom In, Zoom Out, Locate Route, Scale Badge */}
+      <div className="map-floating-right-controls" aria-label="Map View Controls">
+        <div className="zoom-pill-group">
+          <button
+            type="button"
+            className="btn-map-control"
+            onClick={handleZoomIn}
+            title="Zoom In"
+            aria-label="Zoom In"
+          >
+            +
+          </button>
+          <div className="control-divider" />
+          <button
+            type="button"
+            className="btn-map-control"
+            onClick={handleZoomOut}
+            title="Zoom Out"
+            aria-label="Zoom Out"
+          >
+            −
+          </button>
+        </div>
+
+        <button
+          type="button"
+          className="btn-map-control btn-locate"
+          onClick={handleLocateRoute}
+          title="Center on Emergency Safe Corridor"
+          aria-label="Locate Corridor"
+        >
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <circle cx="12" cy="12" r="7" />
+            <line x1="12" y1="1" x2="12" y2="5" />
+            <line x1="12" y1="19" x2="12" y2="23" />
+            <line x1="1" y1="12" x2="5" y2="12" />
+            <line x1="19" y1="12" x2="23" y2="12" />
+          </svg>
+        </button>
+
+        <div className="map-scale-pill" title="Map Scale">
+          <span>5 km</span>
+        </div>
+      </div>
 
       {/* North Compass Rose */}
       <div className="map-compass-badge" title="True North Orientation">

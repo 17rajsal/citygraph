@@ -101,8 +101,8 @@ export default function RoutePlanner({
   if (!isOpen) return null;
 
   // Real or dynamically computed route options
-  const baseTime = activeRoute?.estimated_time_min || 42;
-  const baseDist = activeRoute?.distance_km || 18.6;
+  const baseTime = activeRoute?.estimated_time_min || 24;
+  const baseDist = activeRoute?.distance_km || 12.8;
 
   const routeOptions = [
     {
@@ -118,17 +118,17 @@ export default function RoutePlanner({
       id: 2,
       name: 'Route 2',
       tag: 'Fastest Route',
-      time: `${Math.max(Math.round(baseTime * 0.85), 18)} min`,
-      distance: `${(baseDist * 0.96).toFixed(1)} km`,
+      time: `${Math.max(Math.round(baseTime * 1.16), 28)} min`,
+      distance: `${(baseDist * 1.08).toFixed(1)} km`,
       badge: null,
-      desc: 'Uses Ring Road arterial with moderate traffic congestion.',
+      desc: 'Direct arterial link; moderate traffic congestion.',
     },
     {
       id: 3,
       name: 'Route 3',
       tag: 'Alternative Route',
-      time: `${Math.round(baseTime * 1.15)} min`,
-      distance: `${(baseDist * 1.1).toFixed(1)} km`,
+      time: `${Math.round(baseTime * 1.33)} min`,
+      distance: `${(baseDist * 1.14).toFixed(1)} km`,
       badge: null,
       desc: 'Via outer Delhi peripheral expressway network.',
     },
@@ -281,7 +281,7 @@ export default function RoutePlanner({
         onClick={handleFindRoute}
         disabled={loading}
       >
-        {loading ? 'Calculating Safest Corridor...' : 'Find Route'}
+        {loading ? 'Calculating Safest Corridor...' : 'FIND SAFEST ROUTE'}
       </button>
 
       {/* Route Options List */}
