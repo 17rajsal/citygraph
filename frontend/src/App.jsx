@@ -14,6 +14,8 @@ import DelhiMap from './components/Dashboard/DelhiMap.jsx';
 import GraphView from './components/Dashboard/GraphView.jsx';
 import AssetInspector from './components/Dashboard/AssetInspector.jsx';
 import RoutePlanner from './components/Dashboard/RoutePlanner.jsx';
+import MapLegend from './components/Dashboard/MapLegend.jsx';
+import LiveTrafficAlerts from './components/Dashboard/LiveTrafficAlerts.jsx';
 import RiskOverviewChart from './components/Dashboard/RiskOverviewChart.jsx';
 import RiskLeaderboard from './components/Dashboard/RiskLeaderboard.jsx';
 import SimulationSummaryCard from './components/Dashboard/SimulationSummaryCard.jsx';
@@ -368,7 +370,9 @@ function Dashboard() {
                           selectedNode={selectedNode}
                           onSelectNode={setSelectedNode}
                           mapStyle={mapStyle}
+                          onSetMapStyle={setMapStyle}
                           layerFilters={layerFilters}
+                          setLayerFilters={setLayerFilters}
                           activeRoute={activeRoute}
                           centerViewType={centerViewType}
                           onToggleView={setCenterViewType}
@@ -380,6 +384,9 @@ function Dashboard() {
                           onSetDestination={handleSetDestination}
                           onCalculateRoute={handleCalculateRoute}
                           onClearRoute={handleClearRoute}
+                          onToggleRoutingMode={handleToggleRoutingMode}
+                          onViewRouteOnMap={handleViewRouteOnMap}
+                          routingLoading={routingLoading}
                           simulation={simulation}
                           onRunSimulation={runSimulation}
                           onResetNetwork={resetNetwork}
@@ -407,19 +414,21 @@ function Dashboard() {
                         onSetDestination={handleSetDestination}
                         onCalculateRoute={handleCalculateRoute}
                       />
-                      <RoutePlanner
-                        nodes={graph?.nodes || []}
-                        activeRoute={activeRoute}
-                        routeOrigin={routeOrigin}
-                        routeDestination={routeDestination}
-                        routingMode={routingMode}
-                        onToggleRoutingMode={handleToggleRoutingMode}
-                        onSelectOrigin={handleSetOrigin}
-                        onSelectDestination={handleSetDestination}
-                        onCalculateRoute={handleCalculateRoute}
-                        onClearRoute={handleClearRoute}
-                        onViewRouteOnMap={handleViewRouteOnMap}
-                        loading={routingLoading}
+                    </div>
+                  </div>
+
+                  {/* Master Map Legend & Live Traffic Alerts (Matching Reference Screenshot) */}
+                  <div className="dashboard-map-bottom-grid">
+                    <div className="map-bottom-legend-col">
+                      <MapLegend />
+                    </div>
+                    <div className="map-bottom-alerts-col">
+                      <LiveTrafficAlerts
+                        simulation={simulation}
+                        graph={graph}
+                        onFocusNode={(node) => {
+                          setSelectedNode(node);
+                        }}
                       />
                     </div>
                   </div>

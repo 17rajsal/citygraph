@@ -1,189 +1,363 @@
-/* RoutePlanner.css - Emergency Route Planner Panel (Premium Light Theme) */
-
-.route-planner-panel {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 14px 16px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+/* ==========================================================================
+   RoutePlanner.css - Google Maps Floating Emergency Route Card
+   ========================================================================== */
+.google-route-planner-card {
+  position: absolute;
+  top: 60px;
+  left: 14px;
+  width: 320px;
+  max-width: calc(100% - 28px);
+  background: rgba(255, 255, 255, 0.98);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: 0 6px 20px rgba(15, 23, 42, 0.12);
+  z-index: 1001;
+  padding: 14px;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  animation: fadeIn 0.2s ease-out;
 }
 
-.planner-header {
-  border-bottom: 1px solid #f1f5f9;
-  padding-bottom: 10px;
-}
-
-.planner-title-row {
+.planner-card-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
-}
-
-.planner-badge {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0.8px;
-  color: #64748b;
-  text-transform: uppercase;
-}
-
-.algo-tag {
-  font-size: 9px;
-  font-weight: 800;
-  color: #0284c7;
-  background: #e0f2fe;
-  border: 1px solid #bae6fd;
-  padding: 2px 6px;
-  border-radius: 4px;
-}
-
-.planner-title {
-  font-size: 15px;
-  font-weight: 800;
-  color: #0f172a;
-  margin: 0 0 3px 0;
-}
-
-.planner-desc {
-  font-size: 11px;
-  color: #64748b;
-  margin: 0;
-  line-height: 1.35;
-}
-
-/* Form Styles */
-.planner-form {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-}
-
-.form-label {
-  display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: #475569;
 }
 
-.label-dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
+.planner-heading {
+  font-size: 14px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin: 0;
 }
 
-.dot-origin {
-  background: #0284c7;
-}
-
-.dot-dest {
-  background: #10b981;
-}
-
-.planner-select {
-  width: 100%;
-  background: #f8fafc;
-  border: 1px solid #cbd5e1;
-  border-radius: 8px;
-  padding: 7px 10px;
-  font-size: 12px;
-  color: #0f172a;
+.btn-planner-close {
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
   transition: all 0.15s ease;
 }
 
-.planner-select:focus {
-  outline: none;
-  border-color: #0284c7;
-  background: #ffffff;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+.btn-planner-close:hover {
+  background: #F1F5F9;
+  color: var(--text-primary);
 }
 
-.direct-routing-banner-btn {
+/* A to B Inputs */
+.planner-inputs-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #F8FAFC;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+}
+
+.inputs-left-spine {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.spine-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  background: #e0f2fe;
-  border: 1px solid #bae6fd;
-  color: #0369a1;
-  border-radius: 8px;
-  padding: 8px 12px;
+}
+
+.dot-a { background: #1677FF; }
+.dot-b { background: #EF4444; }
+
+.spine-line {
+  width: 2px;
+  height: 18px;
+  background: #CBD5E1;
+  border-radius: 1px;
+}
+
+.inputs-fields-wrap {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.field-row {
+  width: 100%;
+}
+
+.route-select-input {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  padding: 6px 8px;
   font-size: 11.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+
+.route-select-input:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(22, 119, 255, 0.15);
+}
+
+.btn-swap-endpoints {
+  background: #ffffff;
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
   font-weight: 700;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: all 0.15s ease;
+  flex-shrink: 0;
 }
 
-.direct-routing-banner-btn:hover {
-  background: #bae6fd;
+.btn-swap-endpoints:hover {
+  background: #F1F5F9;
+  color: var(--color-primary);
+  border-color: var(--color-primary);
 }
 
-.direct-routing-banner-btn.active {
-  background: #0284c7;
-  border-color: #0369a1;
-  color: #ffffff;
-  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.3);
-}
-
-.planner-actions {
+/* Route Preference Section */
+.route-pref-section {
   display: flex;
-  gap: 8px;
-  margin-top: 4px;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.btn-calculate-route {
+.pref-section-title,
+.options-section-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pref-pills-row {
+  display: flex;
+  gap: 6px;
+}
+
+.pref-pill-btn {
   flex: 1;
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 6px;
-  background: #0284c7;
-  border: 1px solid #0369a1;
+  gap: 5px;
+  background: #ffffff;
+  border: 1px solid #CBD5E1;
+  border-radius: 6px;
+  padding: 6px 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-width: 0;
+}
+
+.pref-pill-btn:hover {
+  border-color: var(--color-primary);
+  background: #F8FBFF;
+}
+
+.pref-pill-btn.active {
+  background: #EFF6FF;
+  border-color: var(--color-primary);
+  box-shadow: 0 1px 3px rgba(22, 119, 255, 0.12);
+}
+
+.pill-icon {
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.pill-text-col {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+  text-align: left;
+  min-width: 0;
+}
+
+.pill-label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pill-hint {
+  font-size: 8.5px;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Primary Button */
+.btn-primary-find-route {
+  width: 100%;
+  background: var(--color-primary);
   color: #ffffff;
+  border: none;
   border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 12px;
+  padding: 9px;
+  font-size: 13px;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 1px 3px rgba(2, 132, 199, 0.25);
+  box-shadow: 0 2px 6px rgba(22, 119, 255, 0.25);
 }
 
-.btn-calculate-route:hover:not(:disabled) {
-  background: #0369a1;
+.btn-primary-find-route:hover:not(:disabled) {
+  background: var(--color-primary-hover);
 }
 
-.btn-calculate-route:disabled {
+.btn-primary-find-route:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.btn-clear-route {
-  background: #f8fafc;
-  border: 1px solid #cbd5e1;
-  color: #475569;
-  border-radius: 8px;
-  padding: 8px 12px;
-  font-size: 11.5px;
-  font-weight: 600;
+.planner-alert-error {
+  font-size: 11px;
+  color: #DC2626;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  padding: 6px 8px;
+  border-radius: 6px;
+}
+
+/* Route Options Section */
+.route-options-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.route-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.route-option-card {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: #F8FBFF;
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
-.btn-clear-route:hover {
-  background: #fee2e2;
-  border-color: #fca5a5;
-  color: #dc2626;
+.route-option-card:hover {
+  background: #FFFFFF;
+  border-color: var(--color-primary);
+}
+
+.route-option-card.selected {
+  background: #EFF6FF;
+  border-color: var(--color-primary);
+  box-shadow: 0 1px 3px rgba(22, 119, 255, 0.15);
+}
+
+.option-select-indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #10B981;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.route-option-card:not(.selected) .option-select-indicator {
+  background: transparent;
+  border: 1.5px solid #CBD5E1;
+}
+
+.option-main-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.option-header-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.option-name {
+  font-size: 11.5px;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.option-tag {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.option-badge-recommended {
+  font-size: 9px;
+  font-weight: 700;
+  background: #ECFDF5;
+  color: #059669;
+  border: 1px solid #A7F3D0;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.option-telemetry-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+}
+
+.option-time {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.option-distance {
+  color: var(--text-secondary);
+}
+
+.option-dot {
+  color: var(--text-muted);
 }

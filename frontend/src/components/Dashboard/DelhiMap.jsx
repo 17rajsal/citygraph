@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react'
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './DelhiMap.css';
+import RoutePlanner from './RoutePlanner.jsx';
 
 // Fix default Leaflet icon issues in bundlers
 delete L.Icon.Default.prototype._getIconUrl;
@@ -58,7 +59,7 @@ const YAMUNA_RIVER_LINE = [
   [28.510, 77.315],
 ];
 
-// Primary Yamuna River Floodplain Polygon (covers actual riverbed and lowlands from Wazirabad to Okhla)
+// Primary Yamuna River Floodplain Polygon
 const YAMUNA_PRIMARY_FLOOD_POLYGON = [
   [28.725, 77.228],
   [28.712, 77.238],
@@ -72,7 +73,6 @@ const YAMUNA_PRIMARY_FLOOD_POLYGON = [
   [28.585, 77.262],
   [28.555, 77.275],
   [28.535, 77.288],
-  // East bank return:
   [28.530, 77.305],
   [28.560, 77.295],
   [28.590, 77.280],
@@ -83,7 +83,7 @@ const YAMUNA_PRIMARY_FLOOD_POLYGON = [
   [28.720, 77.245],
 ];
 
-// Secondary Inundation Catchment #1: Kashmere Gate & Monastery Market Ring Road Depression (node_20, node_6, node_61)
+// Secondary Inundation Catchment #1: Kashmere Gate & Monastery Market
 const KASHMERE_GATE_FLOOD_POLYGON = [
   [28.678, 77.222],
   [28.679, 77.242],
@@ -92,7 +92,7 @@ const KASHMERE_GATE_FLOOD_POLYGON = [
   [28.654, 77.224],
 ];
 
-// Secondary Inundation Catchment #2: Ring Road Underpass #43 & Barapullah Basin (node_43, node_40, Mathura Road)
+// Secondary Inundation Catchment #2: Ring Road Underpass #43 & Barapullah Basin
 const RING_ROAD_UNDERPASS_FLOOD_POLYGON = [
   [28.590, 77.238],
   [28.586, 77.260],
@@ -101,12 +101,20 @@ const RING_ROAD_UNDERPASS_FLOOD_POLYGON = [
   [28.572, 77.236],
 ];
 
-// Secondary Inundation Catchment #3: Mayur Vihar Trans-Yamuna Retention Basin (node_60)
+// Secondary Inundation Catchment #3: Mayur Vihar Trans-Yamuna Retention Basin
 const MAYUR_VIHAR_FLOOD_POLYGON = [
   [28.615, 77.282],
   [28.620, 77.310],
   [28.592, 77.312],
   [28.590, 77.285],
+];
+
+// Depth markers directly shown on flood polygons (matching reference screenshot)
+const FLOOD_DEPTH_MARKERS = [
+  { name: 'Yamuna Riverbed Floodplain', depth: '1.4 m', coords: [28.648, 77.255] },
+  { name: 'Kashmere Gate Lowland Catchment', depth: '1.2 m', coords: [28.665, 77.234] },
+  { name: 'Ring Road Underpass #43', depth: '0.8 m', coords: [28.575, 77.248] },
+  { name: 'Mayur Vihar Spillway Catchment', depth: '0.6 m', coords: [28.605, 77.295] },
 ];
 
 // Major Delhi Geographic Hub Labels
@@ -119,12 +127,67 @@ const DELHI_GEO_LABELS = [
   { name: 'GURUGRAM CORRIDOR', coords: [28.4900, 77.0800] },
 ];
 
+// Real-Time Traffic Corridors
+const DELHI_TRAFFIC_CORRIDORS = [
+  {
+    name: 'Barapullah & Ring Road Underpass #43',
+    coords: [
+      [28.590, 77.240],
+      [28.580, 77.250],
+      [28.570, 77.255],
+    ],
+    status: 'heavy', // Red
+    color: '#ef4444',
+  },
+  {
+    name: 'Kashmere Gate ISBT Ring Road',
+    coords: [
+      [28.675, 77.228],
+      [28.665, 77.235],
+      [28.655, 77.240],
+    ],
+    status: 'slow', // Orange
+    color: '#f97316',
+  },
+  {
+    name: 'Central Diplomatic Arterial',
+    coords: [
+      [28.605, 77.195],
+      [28.595, 77.190],
+      [28.585, 77.185],
+    ],
+    status: 'fast', // Green
+    color: '#22c55e',
+  },
+  {
+    name: 'Airport Express Priority Link',
+    coords: [
+      [28.585, 77.160],
+      [28.565, 77.120],
+      [28.555, 77.085],
+    ],
+    status: 'fast', // Green
+    color: '#22c55e',
+  },
+  {
+    name: 'Connaught Place Ring',
+    coords: [
+      [28.632, 77.215],
+      [28.635, 77.222],
+      [28.630, 77.225],
+    ],
+    status: 'moderate', // Yellow
+    color: '#eab308',
+  },
+];
+
 export default function DelhiMap({
   nodes = [],
   edges = [],
   selectedNode = null,
   onSelectNode = () => {},
   mapStyle = 'streets',
+  onSetMapStyle = () => {},
   layerFilters = {
     road: true,
     hospital: true,
@@ -147,6 +210,9 @@ export default function DelhiMap({
   onSetDestination = () => {},
   onCalculateRoute = () => {},
   onClearRoute = () => {},
+  onToggleRoutingMode = () => {},
+  onViewRouteOnMap = () => {},
+  routingLoading = false,
   simulation = null,
   // Floating Scenario simulation triggers
   onRunSimulation = () => {},
@@ -161,6 +227,7 @@ export default function DelhiMap({
   const riverLayerRef = useRef(null);
   const floodZonesLayerRef = useRef(null);
   const edgesLayerRef = useRef(null);
+  const trafficLayerRef = useRef(null);
   const routeGlowLayerRef = useRef(null);
   const routePolylineRef = useRef(null);
   const routeMarkersRef = useRef(null);
@@ -171,8 +238,13 @@ export default function DelhiMap({
   const [showSearchDropdown, setShowSearchDropdown] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Quick Filter Dropdown State
+  // Top Popovers & Controls
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [showLayersDropdown, setShowLayersDropdown] = useState(false);
+  const [liveTrafficEnabled, setLiveTrafficEnabled] = useState(true);
+  const [showRoutePlanner, setShowRoutePlanner] = useState(true);
+
+  // Filter States
   const [statusFilter, setStatusFilter] = useState('all'); // 'all' | 'operational' | 'at_risk' | 'affected' | 'failed'
   const [riskFilter, setRiskFilter] = useState('all'); // 'all' | 'high' | 'medium' | 'low'
   const [typeFilter, setTypeFilter] = useState('all');
@@ -230,7 +302,7 @@ export default function DelhiMap({
       const name = (node.name || '').toLowerCase();
       const isMetro = type === 'metro' || name.includes('metro') || name.includes('interchange');
 
-      // 1. Sidebar Layer toggles
+      // 1. Layer toggles
       if (isMetro && !layerFilters.metro) return false;
       if (!isMetro && type === 'hospital' && !layerFilters.hospital) return false;
       if (!isMetro && type === 'fire_station' && !layerFilters.fire_station) return false;
@@ -265,16 +337,16 @@ export default function DelhiMap({
     });
   }, [nodes, layerFilters, typeFilter, statusFilter, riskFilter]);
 
-  // Search filter list
+  // Autocomplete search filtering
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
-    const q = searchQuery.toLowerCase();
+    const q = searchQuery.toLowerCase().trim();
     return nodes
       .filter((n) => (n.name && n.name.toLowerCase().includes(q)) || (n.id && n.id.toLowerCase().includes(q)))
       .slice(0, 6);
   }, [nodes, searchQuery]);
 
-  // Initialize Map on mount
+  // Initialize Leaflet Map
   useEffect(() => {
     if (!mapContainerRef.current || mapInstanceRef.current) return;
 
@@ -287,19 +359,19 @@ export default function DelhiMap({
 
     L.control.zoom({ position: 'bottomright' }).addTo(map);
 
-    // Initial Tile Layer (CARTO Voyager Light by default)
-    const tileConf = TILE_LAYERS[mapStyle] || TILE_LAYERS.streets;
-    const tileLayer = L.tileLayer(tileConf.url, {
-      subdomains: tileConf.subdomains || 'abc',
-      attribution: tileConf.attribution,
-      maxZoom: tileConf.maxZoom,
+    const initialTileConf = TILE_LAYERS[mapStyle] || TILE_LAYERS.streets;
+    const tileLayer = L.tileLayer(initialTileConf.url, {
+      subdomains: initialTileConf.subdomains || 'abc',
+      attribution: initialTileConf.attribution,
+      maxZoom: initialTileConf.maxZoom,
     }).addTo(map);
     tileLayerRef.current = tileLayer;
 
-    // Feature Layer Groups (Order matters for z-index stacking!)
+    // Layer groups
     riverLayerRef.current = L.layerGroup().addTo(map);
     floodZonesLayerRef.current = L.layerGroup().addTo(map);
     edgesLayerRef.current = L.layerGroup().addTo(map);
+    trafficLayerRef.current = L.layerGroup().addTo(map);
     geoLabelsLayerRef.current = L.layerGroup().addTo(map);
     routeGlowLayerRef.current = L.layerGroup().addTo(map);
     routeMarkersRef.current = L.layerGroup().addTo(map);
@@ -328,11 +400,6 @@ export default function DelhiMap({
       maxZoom: tileConf.maxZoom,
     }).addTo(map);
 
-    // If satellite tile errors occur, fallback smoothly
-    newTileLayer.on('tileerror', () => {
-      console.warn('Map tile load error, falling back to Carto Dark Matter');
-    });
-
     tileLayerRef.current = newTileLayer;
     newTileLayer.bringToBack();
   }, [mapStyle]);
@@ -347,8 +414,8 @@ export default function DelhiMap({
     // Yamuna River Water Ribbon
     const riverCasing = L.polyline(YAMUNA_RIVER_LINE, {
       color: '#0284c7',
-      weight: 9,
-      opacity: 0.3,
+      weight: 8,
+      opacity: 0.35,
       lineCap: 'round',
       lineJoin: 'round',
     });
@@ -356,8 +423,8 @@ export default function DelhiMap({
 
     const riverCore = L.polyline(YAMUNA_RIVER_LINE, {
       color: '#38bdf8',
-      weight: 4,
-      opacity: 0.75,
+      weight: 3.5,
+      opacity: 0.85,
       lineCap: 'round',
       lineJoin: 'round',
     });
@@ -376,28 +443,24 @@ export default function DelhiMap({
     });
   }, []);
 
-  // Render Dedicated Flood Risk Zones (Polygons respond to simulation!)
+  // Render Dedicated Flood Risk Zones & Depth Badges
   useEffect(() => {
     if (!mapInstanceRef.current || !floodZonesLayerRef.current) return;
 
     floodZonesLayerRef.current.clearLayers();
 
-    // Check if Flood layer is enabled in sidebar
     if (layerFilters.flood_zones === false) return;
 
-    // Baseline vs Post-Simulation styling
-    const primaryFillOpacity = isSimulated ? 0.42 : 0.12;
-    const secondaryFillOpacity = isSimulated ? 0.35 : 0.10;
-    const primaryColor = isSimulated ? '#38bdf8' : '#0284c7';
-    const secondaryColor = isSimulated ? '#00f0ff' : '#0369a1';
-    const dashArray = isSimulated ? null : '4, 4';
+    const primaryFillOpacity = isSimulated ? 0.40 : 0.16;
+    const secondaryFillOpacity = isSimulated ? 0.32 : 0.12;
+    const primaryColor = isSimulated ? '#0284c7' : '#0369a1';
+    const secondaryColor = isSimulated ? '#00f0ff' : '#0284c7';
 
     // 1. Primary Yamuna Floodplain Polygon
     const primaryPolygon = L.polygon(YAMUNA_PRIMARY_FLOOD_POLYGON, {
       color: primaryColor,
-      weight: isSimulated ? 2.5 : 1.5,
-      dashArray,
-      fillColor: '#0369a1',
+      weight: 2,
+      fillColor: '#0284c7',
       fillOpacity: primaryFillOpacity,
       className: isSimulated ? 'leaflet-flood-polygon flood-active' : 'leaflet-flood-polygon',
     });
@@ -412,9 +475,8 @@ export default function DelhiMap({
     // 2. Kashmere Gate / Monastery Market Lowland Depression
     const kashmereGatePolygon = L.polygon(KASHMERE_GATE_FLOOD_POLYGON, {
       color: secondaryColor,
-      weight: isSimulated ? 2 : 1.2,
-      dashArray,
-      fillColor: '#0284c7',
+      weight: 1.8,
+      fillColor: '#0369a1',
       fillOpacity: secondaryFillOpacity,
       className: isSimulated ? 'leaflet-flood-polygon flood-active' : 'leaflet-flood-polygon',
     });
@@ -429,9 +491,8 @@ export default function DelhiMap({
     // 3. Ring Road Underpass #43 & Barapullah Depression
     const underpassPolygon = L.polygon(RING_ROAD_UNDERPASS_FLOOD_POLYGON, {
       color: secondaryColor,
-      weight: isSimulated ? 2 : 1.2,
-      dashArray,
-      fillColor: '#0284c7',
+      weight: 1.8,
+      fillColor: '#0369a1',
       fillOpacity: secondaryFillOpacity,
       className: isSimulated ? 'leaflet-flood-polygon flood-active' : 'leaflet-flood-polygon',
     });
@@ -446,8 +507,7 @@ export default function DelhiMap({
     // 4. Mayur Vihar Trans-Yamuna Retention Catchment
     const mayurViharPolygon = L.polygon(MAYUR_VIHAR_FLOOD_POLYGON, {
       color: secondaryColor,
-      weight: isSimulated ? 2 : 1.2,
-      dashArray,
+      weight: 1.8,
       fillColor: '#0284c7',
       fillOpacity: secondaryFillOpacity,
       className: isSimulated ? 'leaflet-flood-polygon flood-active' : 'leaflet-flood-polygon',
@@ -459,9 +519,81 @@ export default function DelhiMap({
       { sticky: true, className: 'flood-tooltip' }
     );
     floodZonesLayerRef.current.addLayer(mayurViharPolygon);
+
+    // 5. Water Depth Badges matching reference screenshot
+    FLOOD_DEPTH_MARKERS.forEach((zone) => {
+      const depthIcon = L.divIcon({
+        className: 'custom-flood-depth-container',
+        html: `
+          <div class="map-flood-depth-badge ${isSimulated ? 'depth-severe' : 'depth-baseline'}">
+            <span class="depth-wave-icon">🌊</span>
+            <span class="depth-text">${zone.depth}</span>
+          </div>
+        `,
+        iconSize: [64, 22],
+        iconAnchor: [32, 11],
+      });
+      const marker = L.marker(zone.coords, { icon: depthIcon, interactive: false });
+      floodZonesLayerRef.current.addLayer(marker);
+    });
   }, [layerFilters.flood_zones, isSimulated]);
 
-  // Helper to create clean professional HTML markers (No blinding glow everywhere!)
+  // Render Clean Subtle Road Links (NO dotted red clutter)
+  useEffect(() => {
+    if (!mapInstanceRef.current || !edgesLayerRef.current) return;
+    edgesLayerRef.current.clearLayers();
+
+    if (!layerFilters.road || !edges || !edges.length) return;
+
+    const nodeMap = new Map();
+    nodes.forEach((n) => nodeMap.set(n.id, n));
+
+    edges.forEach((edge) => {
+      const src = nodeMap.get(edge.source);
+      const tgt = nodeMap.get(edge.target);
+
+      if (src && tgt && src.lat && src.lng && tgt.lat && tgt.lng) {
+        const polyline = L.polyline(
+          [
+            [src.lat, src.lng],
+            [tgt.lat, tgt.lng],
+          ],
+          {
+            color: '#94a3b8',
+            weight: 1.4,
+            opacity: 0.28,
+            lineCap: 'round',
+          }
+        );
+        edgesLayerRef.current.addLayer(polyline);
+      }
+    });
+  }, [edges, nodes, layerFilters.road]);
+
+  // Render Real-Time Traffic Corridors when Live Traffic is enabled
+  useEffect(() => {
+    if (!mapInstanceRef.current || !trafficLayerRef.current) return;
+    trafficLayerRef.current.clearLayers();
+
+    if (!liveTrafficEnabled) return;
+
+    DELHI_TRAFFIC_CORRIDORS.forEach((corridor) => {
+      const line = L.polyline(corridor.coords, {
+        color: corridor.color,
+        weight: 3.5,
+        opacity: 0.85,
+        lineCap: 'round',
+        lineJoin: 'round',
+      });
+      line.bindTooltip(`Traffic: ${corridor.name} (${corridor.status.toUpperCase()})`, {
+        sticky: true,
+        className: 'flood-tooltip',
+      });
+      trafficLayerRef.current.addLayer(line);
+    });
+  }, [liveTrafficEnabled]);
+
+  // Helper to create clean professional HTML markers
   const createNodeIcon = useCallback(
     (node, isSelected, isOrigin, isDest) => {
       const status = node.status || 'safe';
@@ -478,14 +610,7 @@ export default function DelhiMap({
       else if (type === 'fire_station') typeGlyph = '▲';
       else if (type === 'drainage') typeGlyph = '■';
       else if (type === 'transformer') typeGlyph = '⚡';
-      else if (isMetro) typeGlyph = '🚇';
-
-      let specialBadge = '';
-      if (isOrigin) {
-        specialBadge = `<div class="marker-routing-tag tag-origin"><span>ORIGIN</span></div>`;
-      } else if (isDest) {
-        specialBadge = `<div class="marker-routing-tag tag-dest"><span>DEST</span></div>`;
-      }
+      else if (isMetro) typeGlyph = 'Ⓜ';
 
       const classes = [
         'delhi-map-marker',
@@ -503,7 +628,6 @@ export default function DelhiMap({
           <div class="marker-core">
             <span class="marker-icon-glyph">${typeGlyph}</span>
           </div>
-          ${specialBadge}
         </div>
       `;
 
@@ -534,7 +658,6 @@ export default function DelhiMap({
       const icon = createNodeIcon(node, isSelected, isOrigin, isDest);
       const marker = L.marker([node.lat, node.lng], { icon });
 
-      // Build Dark Popup with Direct Routing & Inspection Actions
       const statusLabel = (node.status || 'SAFE').toUpperCase();
       const isFailed = node.status === 'failed';
 
@@ -569,7 +692,6 @@ export default function DelhiMap({
             </div>
           ` : ''}
 
-          <!-- Direct Actions inside Popup -->
           <div class="delhi-popup-actions">
             <button
               type="button"
@@ -604,7 +726,6 @@ export default function DelhiMap({
         autoPan: true,
       });
 
-      // Node marker click handler: supports routing mode selection & normal inspection
       marker.on('click', () => {
         onSelectNode(node);
 
@@ -664,52 +785,7 @@ export default function DelhiMap({
     }
   }, [selectedNode]);
 
-  // Render Network Interconnection Edges (Failed roads highlighted/dimmed)
-  useEffect(() => {
-    if (!mapInstanceRef.current || !edgesLayerRef.current) return;
-
-    edgesLayerRef.current.clearLayers();
-    if (!edges || !edges.length) return;
-
-    const nodeMap = new Map();
-    nodes.forEach((n) => nodeMap.set(n.id, n));
-
-    edges.forEach((edge) => {
-      const src = nodeMap.get(edge.source);
-      const tgt = nodeMap.get(edge.target);
-
-      if (src && tgt && src.lat && src.lng && tgt.lat && tgt.lng) {
-        const isHazardous = src.status === 'failed' || tgt.status === 'failed';
-        const isAffected = src.status === 'affected' || tgt.status === 'affected';
-
-        let color = '#2a3b53';
-        let weight = 1.2;
-        let dashArray = '3, 4';
-        let opacity = 0.4;
-
-        if (isHazardous) {
-          color = '#ef4444';
-          weight = 1.8;
-          opacity = 0.55;
-          dashArray = '4, 4';
-        } else if (isAffected) {
-          color = '#f97316';
-          opacity = 0.45;
-        }
-
-        const polyline = L.polyline(
-          [
-            [src.lat, src.lng],
-            [tgt.lat, tgt.lng],
-          ],
-          { color, weight, dashArray, opacity }
-        );
-        edgesLayerRef.current.addLayer(polyline);
-      }
-    });
-  }, [edges, nodes]);
-
-  // Render Glowing Cyan Route Polyline & Terminal Pins
+  // Render Solid Blue Route Polyline & Circular A/B Pins
   useEffect(() => {
     if (!mapInstanceRef.current || !routeGlowLayerRef.current || !routeMarkersRef.current) return;
 
@@ -727,41 +803,61 @@ export default function DelhiMap({
 
     const coords = activeRoute.coordinates;
 
-    // Glowing cyan outer casing
-    const glowLine = L.polyline(coords, {
-      color: '#00f0ff',
-      weight: 9,
-      opacity: 0.4,
+    // Outer white casing line
+    const casingLine = L.polyline(coords, {
+      color: '#ffffff',
+      weight: 8,
+      opacity: 0.95,
       lineCap: 'round',
       lineJoin: 'round',
     });
-    routeGlowLayerRef.current.addLayer(glowLine);
+    routeGlowLayerRef.current.addLayer(casingLine);
 
-    // Bright cyan inner corridor
+    // Solid Google Maps Royal Blue corridor
     const pathLine = L.polyline(coords, {
-      color: '#38bdf8',
-      weight: 4.5,
-      opacity: 0.98,
+      color: '#2563eb',
+      weight: 5.2,
+      opacity: 1.0,
       lineCap: 'round',
       lineJoin: 'round',
     });
     routeGlowLayerRef.current.addLayer(pathLine);
     routePolylineRef.current = pathLine;
 
-    // Fit map bounds to show complete safe corridor
+    // Origin Circular Pin 'A'
+    const startCoord = coords[0];
+    const originPinIcon = L.divIcon({
+      className: 'custom-google-pin-container',
+      html: `
+        <div class="google-pin-circle pin-circle-a" title="Route Origin (A)">
+          <span>A</span>
+        </div>
+      `,
+      iconSize: [26, 26],
+      iconAnchor: [13, 13],
+    });
+    const originPin = L.marker(startCoord, { icon: originPinIcon, zIndexOffset: 1200 });
+    routeMarkersRef.current.addLayer(originPin);
+
+    // Destination Circular Pin 'B'
+    const endCoord = coords[coords.length - 1];
+    const destPinIcon = L.divIcon({
+      className: 'custom-google-pin-container',
+      html: `
+        <div class="google-pin-circle pin-circle-b" title="Route Destination (B)">
+          <span>B</span>
+        </div>
+      `,
+      iconSize: [26, 26],
+      iconAnchor: [13, 13],
+    });
+    const destPin = L.marker(endCoord, { icon: destPinIcon, zIndexOffset: 1200 });
+    routeMarkersRef.current.addLayer(destPin);
+
+    // Fit map bounds to show complete corridor
     const bounds = L.latLngBounds(coords);
     mapInstanceRef.current.fitBounds(bounds, { padding: [55, 55], maxZoom: 14 });
   }, [activeRoute]);
-
-  // Reset View to Delhi Center
-  const handleResetZoom = () => {
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.setView(DELHI_CENTER, DEFAULT_ZOOM, {
-        animate: true,
-        duration: 0.5,
-      });
-    }
-  };
 
   // Fit view to all visible nodes
   const handleFitNetwork = () => {
@@ -783,7 +879,6 @@ export default function DelhiMap({
     }
   };
 
-  // Active filters count
   const activeFiltersCount = [
     statusFilter !== 'all',
     riskFilter !== 'all',
@@ -792,35 +887,46 @@ export default function DelhiMap({
 
   return (
     <div className={`delhi-map-container ${isFullscreen ? 'is-fullscreen' : ''}`}>
-      {/* Floating Top Controls Bar */}
+      {/* Floating Top Controls Bar Matching Master Reference */}
       <div className="map-top-bar">
-        {/* View Mode Toggle: [ Map View ] | [ Graph View ] */}
-        <div className="view-toggle-pills" role="radiogroup" aria-label="Center View Mode">
+        {/* Basemap Style Toggle: [ Map ] | [ Satellite ] | [ Terrain ] | [ Graph ] */}
+        <div className="basemap-toggle-pills" role="radiogroup" aria-label="Basemap Style">
           <button
             type="button"
-            className={`view-pill-btn ${centerViewType === 'map' ? 'active' : ''}`}
-            onClick={() => onToggleView('map')}
+            className={`basemap-pill-btn ${mapStyle === 'streets' ? 'active' : ''}`}
+            onClick={() => onSetMapStyle('streets')}
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6" />
-              <line x1="8" y1="2" x2="8" y2="18" />
-              <line x1="16" y1="6" x2="16" y2="22" />
-            </svg>
-            <span>Map View</span>
+            <span>Map</span>
           </button>
           <button
             type="button"
-            className={`view-pill-btn ${centerViewType === 'graph' ? 'active' : ''}`}
-            onClick={() => onToggleView('graph')}
+            className={`basemap-pill-btn ${mapStyle === 'satellite' ? 'active' : ''}`}
+            onClick={() => onSetMapStyle('satellite')}
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <span>Satellite</span>
+          </button>
+          <button
+            type="button"
+            className={`basemap-pill-btn ${mapStyle === 'positron' ? 'active' : ''}`}
+            onClick={() => onSetMapStyle('positron')}
+          >
+            <span>Terrain</span>
+          </button>
+          <div className="pill-divider" />
+          <button
+            type="button"
+            className={`basemap-pill-btn btn-graph-pill ${centerViewType === 'graph' ? 'active' : ''}`}
+            onClick={() => onToggleView(centerViewType === 'map' ? 'graph' : 'map')}
+            title="Toggle Network Topology Graph"
+          >
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
               <circle cx="18" cy="5" r="3" />
               <circle cx="6" cy="12" r="3" />
               <circle cx="18" cy="19" r="3" />
               <line x1="8.59" y1="13.51" x2="15.42" y2="17.49" />
               <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
             </svg>
-            <span>Graph View</span>
+            <span>Graph</span>
           </button>
         </div>
 
@@ -883,105 +989,209 @@ export default function DelhiMap({
           )}
         </div>
 
-        {/* Quick Filter Menu Dropdown */}
-        <div className="map-filter-wrapper">
-          <button
-            type="button"
-            className={`map-tool-btn filter-btn ${activeFiltersCount > 0 ? 'filter-active' : ''}`}
-            onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-            title="Filter displayed infrastructure"
-          >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
-            </svg>
-            <span>Filters {activeFiltersCount > 0 ? `(${activeFiltersCount})` : ''}</span>
-          </button>
+        {/* Right Top Controls: Filters, Layers, Live Traffic, Fullscreen */}
+        <div className="map-actions-group">
+          {/* Quick Filter Menu Dropdown */}
+          <div className="map-filter-wrapper">
+            <button
+              type="button"
+              className={`map-tool-btn filter-btn ${activeFiltersCount > 0 ? 'filter-active' : ''}`}
+              onClick={() => {
+                setShowFilterDropdown(!showFilterDropdown);
+                setShowLayersDropdown(false);
+              }}
+              title="Filter displayed infrastructure"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+              </svg>
+              <span>Filters {activeFiltersCount > 0 ? `(${activeFiltersCount})` : ''}</span>
+            </button>
 
-          {showFilterDropdown && (
-            <div className="map-filter-popover">
-              <div className="filter-popover-header">
-                <span className="popover-title">FILTER MAP MARKERS</span>
-                {activeFiltersCount > 0 && (
+            {showFilterDropdown && (
+              <div className="map-filter-popover">
+                <div className="filter-popover-header">
+                  <span className="popover-title">FILTER MAP MARKERS</span>
+                  {activeFiltersCount > 0 && (
+                    <button
+                      type="button"
+                      className="btn-reset-filters"
+                      onClick={() => {
+                        setStatusFilter('all');
+                        setRiskFilter('all');
+                        setTypeFilter('all');
+                      }}
+                    >
+                      Reset
+                    </button>
+                  )}
+                </div>
+
+                <div className="filter-row">
+                  <label className="filter-lbl">Status:</label>
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="filter-sel"
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="operational">Operational (Safe)</option>
+                    <option value="at_risk">At Risk (Risk &ge; 0.7)</option>
+                    <option value="affected">Affected / Overloaded</option>
+                    <option value="failed">Failed / Flooded</option>
+                  </select>
+                </div>
+
+                <div className="filter-row">
+                  <label className="filter-lbl">Risk Index:</label>
+                  <select
+                    value={riskFilter}
+                    onChange={(e) => setRiskFilter(e.target.value)}
+                    className="filter-sel"
+                  >
+                    <option value="all">All Risk Levels</option>
+                    <option value="high">High Risk (&gt; 0.8)</option>
+                    <option value="medium">Medium Risk (0.5 - 0.8)</option>
+                    <option value="low">Low Risk (&lt; 0.5)</option>
+                  </select>
+                </div>
+
+                <div className="filter-row">
+                  <label className="filter-lbl">Sector:</label>
+                  <select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    className="filter-sel"
+                  >
+                    <option value="all">All Sectors</option>
+                    <option value="hospital">Hospitals</option>
+                    <option value="fire_station">Fire Stations</option>
+                    <option value="drainage">Drainage & Pumps</option>
+                    <option value="transformer">Power Grid</option>
+                    <option value="road">Road Junctions</option>
+                    <option value="metro">Metro Stations</option>
+                  </select>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Layers Popover Menu */}
+          <div className="map-layers-wrapper">
+            <button
+              type="button"
+              className={`map-tool-btn ${showLayersDropdown ? 'btn-active' : ''}`}
+              onClick={() => {
+                setShowLayersDropdown(!showLayersDropdown);
+                setShowFilterDropdown(false);
+              }}
+              title="Toggle map layers"
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                <polygon points="12 2 2 7 12 12 22 7 12 2" />
+                <polyline points="2 17 12 22 22 17" />
+                <polyline points="2 12 12 17 22 12" />
+              </svg>
+              <span>Layers ▾</span>
+            </button>
+
+            {showLayersDropdown && (
+              <div className="map-layers-popover">
+                <div className="layers-popover-header">
+                  <span>MAP LAYERS</span>
                   <button
                     type="button"
-                    className="btn-reset-filters"
-                    onClick={() => {
-                      setStatusFilter('all');
-                      setRiskFilter('all');
-                      setTypeFilter('all');
-                    }}
+                    className="btn-close-popover"
+                    onClick={() => setShowLayersDropdown(false)}
                   >
-                    Reset
+                    ✕
                   </button>
-                )}
+                </div>
+                <div className="layers-popover-list">
+                  <label className="layers-popover-item">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(layerFilters.flood_zones)}
+                      onChange={() => setLayerFilters((p) => ({ ...p, flood_zones: !p.flood_zones }))}
+                    />
+                    <span className="layer-dot dot-cyan" />
+                    <span>Flood Risk Zones</span>
+                  </label>
+                  <label className="layers-popover-item">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(layerFilters.road)}
+                      onChange={() => setLayerFilters((p) => ({ ...p, road: !p.road }))}
+                    />
+                    <span className="layer-dot dot-blue" />
+                    <span>Road Network</span>
+                  </label>
+                  <label className="layers-popover-item">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(layerFilters.hospital)}
+                      onChange={() => setLayerFilters((p) => ({ ...p, hospital: !p.hospital }))}
+                    />
+                    <span className="layer-dot dot-red" />
+                    <span>Hospitals</span>
+                  </label>
+                  <label className="layers-popover-item">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(layerFilters.fire_station)}
+                      onChange={() => setLayerFilters((p) => ({ ...p, fire_station: !p.fire_station }))}
+                    />
+                    <span className="layer-dot dot-orange" />
+                    <span>Fire Stations</span>
+                  </label>
+                  <label className="layers-popover-item">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(layerFilters.drainage)}
+                      onChange={() => setLayerFilters((p) => ({ ...p, drainage: !p.drainage }))}
+                    />
+                    <span className="layer-dot dot-teal" />
+                    <span>Drainage & Sluice</span>
+                  </label>
+                  <label className="layers-popover-item">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(layerFilters.transformer)}
+                      onChange={() => setLayerFilters((p) => ({ ...p, transformer: !p.transformer }))}
+                    />
+                    <span className="layer-dot dot-amber" />
+                    <span>Transformers / Grid</span>
+                  </label>
+                  <label className="layers-popover-item">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(layerFilters.metro)}
+                      onChange={() => setLayerFilters((p) => ({ ...p, metro: !p.metro }))}
+                    />
+                    <span className="layer-dot dot-indigo" />
+                    <span>Metro Stations</span>
+                  </label>
+                </div>
               </div>
+            )}
+          </div>
 
-              <div className="filter-row">
-                <label className="filter-lbl">Status:</label>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="filter-sel"
-                >
-                  <option value="all">All Statuses</option>
-                  <option value="operational">Operational (Safe)</option>
-                  <option value="at_risk">At Risk (Risk &ge; 0.7)</option>
-                  <option value="affected">Affected / Overloaded</option>
-                  <option value="failed">Failed / Flooded</option>
-                </select>
-              </div>
-
-              <div className="filter-row">
-                <label className="filter-lbl">Risk Index:</label>
-                <select
-                  value={riskFilter}
-                  onChange={(e) => setRiskFilter(e.target.value)}
-                  className="filter-sel"
-                >
-                  <option value="all">All Risk Levels</option>
-                  <option value="high">High Risk (&gt; 0.8)</option>
-                  <option value="medium">Medium Risk (0.5 - 0.8)</option>
-                  <option value="low">Low Risk (&lt; 0.5)</option>
-                </select>
-              </div>
-
-              <div className="filter-row">
-                <label className="filter-lbl">Sector:</label>
-                <select
-                  value={typeFilter}
-                  onChange={(e) => setTypeFilter(e.target.value)}
-                  className="filter-sel"
-                >
-                  <option value="all">All Sectors</option>
-                  <option value="hospital">Hospitals</option>
-                  <option value="fire_station">Fire Stations</option>
-                  <option value="drainage">Drainage & Pumps</option>
-                  <option value="transformer">Power Grid</option>
-                  <option value="road">Road Junctions</option>
-                  <option value="metro">Metro Stations</option>
-                </select>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Action Buttons: Layers, Fullscreen & Live Status */}
-        <div className="map-actions-group">
-          <button
-            type="button"
-            className="map-tool-btn"
-            onClick={handleFitNetwork}
-            title="Fit view to visible nodes"
+          {/* Live Traffic Toggle Switch */}
+          <div
+            className={`live-traffic-switch-pill ${liveTrafficEnabled ? 'is-active' : ''}`}
+            onClick={() => setLiveTrafficEnabled(!liveTrafficEnabled)}
+            role="switch"
+            aria-checked={liveTrafficEnabled}
+            title="Toggle Live Traffic Overlay"
           >
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-              <path d="M15 3h6v6" />
-              <path d="M9 21H3v-6" />
-              <path d="M21 3l-7 7" />
-              <path d="M3 21l7-7" />
-            </svg>
-            <span>Layers</span>
-          </button>
+            <span className="traffic-dot" />
+            <span className="traffic-label">Live Traffic</span>
+            <div className="switch-track">
+              <div className="switch-thumb" />
+            </div>
+          </div>
 
+          {/* Fullscreen Button */}
           <button
             type="button"
             className="map-tool-btn icon-only"
@@ -992,118 +1202,41 @@ export default function DelhiMap({
               <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
             </svg>
           </button>
-
-          <div className="map-live-pill" title="Deterministic Simulation Engine Active">
-            <span className="live-dot" />
-            <span>Live</span>
-          </div>
         </div>
       </div>
 
-      {/* FLOATING CARD 1: Top-Left Scenario Control */}
-      <div className="map-floating-card top-left-card">
-        <div className="floating-card-header">
-          <span className="floating-card-title">Active Scenario</span>
-          <span className="floating-chevron">▾</span>
-        </div>
-        <div className="floating-scenario-display">
-          <span className="scenario-glyph">🌧</span>
-          <div className="scenario-details">
-            <span className="scenario-name">Monsoon Cloudburst</span>
-            <span className="scenario-val">90 mm/hr</span>
-          </div>
-        </div>
-        <div className="floating-btn-group">
-          <button
-            type="button"
-            className="floating-btn-primary"
-            onClick={onRunSimulation}
-            disabled={loadingSimulation}
-          >
-            {loadingSimulation ? 'Simulating...' : '▶ Run Simulation'}
-          </button>
-          <button
-            type="button"
-            className="floating-btn-secondary"
-            onClick={onResetNetwork}
-            disabled={loadingSimulation}
-          >
-            ↺ Reset to Baseline
-          </button>
-        </div>
-      </div>
-
-      {/* FLOATING CARD 2: Bottom-Left Map Layers */}
-      <div className="map-floating-card bottom-left-card">
-        <div className="floating-card-header">
-          <span className="floating-card-title">Map Layers</span>
-        </div>
-        <div className="floating-layer-list">
-          <label className="floating-layer-item">
-            <input
-              type="checkbox"
-              checked={Boolean(layerFilters.flood_zones)}
-              onChange={() => setLayerFilters((p) => ({ ...p, flood_zones: !p.flood_zones }))}
-            />
-            <span className="layer-glyph icon-cyan">🌊</span>
-            <span className="layer-text">Flood Risk Zones</span>
-          </label>
-          <label className="floating-layer-item">
-            <input
-              type="checkbox"
-              checked={Boolean(layerFilters.road)}
-              onChange={() => setLayerFilters((p) => ({ ...p, road: !p.road }))}
-            />
-            <span className="layer-glyph icon-blue">↔</span>
-            <span className="layer-text">Road Network</span>
-          </label>
-          <label className="floating-layer-item">
-            <input
-              type="checkbox"
-              checked={Boolean(layerFilters.hospital)}
-              onChange={() => setLayerFilters((p) => ({ ...p, hospital: !p.hospital }))}
-            />
-            <span className="layer-glyph icon-red">➕</span>
-            <span className="layer-text">Hospitals</span>
-          </label>
-          <label className="floating-layer-item">
-            <input
-              type="checkbox"
-              checked={Boolean(layerFilters.fire_station)}
-              onChange={() => setLayerFilters((p) => ({ ...p, fire_station: !p.fire_station }))}
-            />
-            <span className="layer-glyph icon-orange">🔥</span>
-            <span className="layer-text">Fire Stations</span>
-          </label>
-          <label className="floating-layer-item">
-            <input
-              type="checkbox"
-              checked={Boolean(layerFilters.drainage)}
-              onChange={() => setLayerFilters((p) => ({ ...p, drainage: !p.drainage }))}
-            />
-            <span className="layer-glyph icon-teal">💧</span>
-            <span className="layer-text">Drainage / Pumps</span>
-          </label>
-          <label className="floating-layer-item">
-            <input
-              type="checkbox"
-              checked={Boolean(layerFilters.transformer)}
-              onChange={() => setLayerFilters((p) => ({ ...p, transformer: !p.transformer }))}
-            />
-            <span className="layer-glyph icon-amber">⚡</span>
-            <span className="layer-text">Transformers</span>
-          </label>
-          <label className="floating-layer-item">
-            <input
-              type="checkbox"
-              checked={Boolean(layerFilters.metro)}
-              onChange={() => setLayerFilters((p) => ({ ...p, metro: !p.metro }))}
-            />
-            <span className="layer-glyph icon-indigo">Ⓜ</span>
-            <span className="layer-text">Metro Stations</span>
-          </label>
-        </div>
-      </div>
+      {/* Floating Route Planner Over Left of Map (matching reference screenshot) */}
+      {showRoutePlanner ? (
+        <RoutePlanner
+          nodes={nodes}
+          activeRoute={activeRoute}
+          routeOrigin={routeOrigin}
+          routeDestination={routeDestination}
+          routingMode={routingMode}
+          onToggleRoutingMode={onToggleRoutingMode}
+          onSelectOrigin={onSetOrigin}
+          onSelectDestination={onSetDestination}
+          onCalculateRoute={onCalculateRoute}
+          onClearRoute={onClearRoute}
+          onViewRouteOnMap={onViewRouteOnMap}
+          loading={routingLoading}
+          isOpen={showRoutePlanner}
+          onClose={() => setShowRoutePlanner(false)}
+        />
+      ) : (
+        <button
+          type="button"
+          className="btn-reopen-route-planner"
+          onClick={() => setShowRoutePlanner(true)}
+          title="Open Emergency Route Planning"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <circle cx="12" cy="12" r="10" />
+            <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" />
+          </svg>
+          <span>Find Route</span>
+        </button>
+      )}
 
       {/* North Compass Rose */}
       <div className="map-compass-badge" title="True North Orientation">
@@ -1135,7 +1268,7 @@ export default function DelhiMap({
         </div>
       )}
 
-      {/* Routing Alert Toast (e.g. if user clicks a submerged node) */}
+      {/* Routing Alert Toast */}
       {routingAlert && (
         <div className="map-routing-alert-toast" role="alert">
           <span>{routingAlert}</span>
@@ -1144,32 +1277,6 @@ export default function DelhiMap({
 
       {/* Actual Leaflet Map Canvas */}
       <div ref={mapContainerRef} className="leaflet-map-canvas" />
-
-      {/* Bottom Map Status Ribbon Matching Reference Screenshot */}
-      <div className="delhi-map-footer-ribbon">
-        <div className="ribbon-col-main">
-          <span className="ribbon-grid-icon">🏢</span>
-          <div className="ribbon-grid-text">
-            <span className="ribbon-title">Delhi / NCR Infrastructure Grid</span>
-            <span className="ribbon-desc">{nodes.length || 108} Sites • Prototype Simulation</span>
-          </div>
-        </div>
-
-        <div className="ribbon-col-pill pill-green">
-          <span className="status-dot dot-green" />
-          <span className="pill-text">Safe Corridor: {activeRoute?.distance_km ?? '12.8'} km ({activeRoute?.estimated_time_min ?? '24'} min)</span>
-        </div>
-
-        <div className="ribbon-col-pill pill-red">
-          <span className="status-dot dot-red" />
-          <span className="pill-text">{activeRoute?.blocked_nodes_count ?? (isSimulated ? 8 : 5)} Hazards Avoided</span>
-        </div>
-
-        <div className="ribbon-col-sync">
-          <span className="sync-icon">💾</span>
-          <span className="sync-text">Last Updated Sep 20, 2026 17:58</span>
-        </div>
-      </div>
     </div>
   );
 }

@@ -1,0 +1,120 @@
+/* ==========================================================================
+   MapLegend.css - Bottom Legend Bar matching Reference Screenshot
+   ========================================================================== */
+.map-legend-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  padding: 10px 18px;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  gap: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  overflow-x: auto;
+}
+
+.legend-col {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.legend-col-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.legend-items-grid {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.legend-label {
+  font-weight: 500;
+}
+
+/* Infrastructure Glyphs */
+.legend-glyph {
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.glyph-hospital { color: #EF4444; }
+.glyph-fire { color: #F97316; }
+.glyph-metro { color: #4F46E5; }
+.glyph-transformer { color: #F59E0B; }
+.glyph-drainage { color: #0284C7; }
+
+/* Status Dots */
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-operational { background: #10B981; }
+.dot-at-risk { background: #F97316; }
+.dot-failed { background: #EF4444; }
+
+/* Traffic Lines */
+.traffic-line {
+  width: 14px;
+  height: 3px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.line-fast { background: #10B981; }
+.line-moderate { background: #F59E0B; }
+.line-slow { background: #F97316; }
+.line-heavy { background: #EF4444; }
+
+/* Flood Depth Swatches */
+.depth-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  display: inline-block;
+}
+
+.swatch-low { background: #BAE6FD; }
+.swatch-mod { background: #38BDF8; }
+.swatch-high { background: #0284C7; }
+.swatch-severe { background: #0369A1; }
+
+.legend-col-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--border-subtle);
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .map-legend-container {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .legend-col-divider {
+    display: none;
+  }
+}

@@ -2084,10 +2084,10 @@ button, select, input {
   box-sizing: border-box;
 }
 
-/* Center Workspace Split: Map/Graph on left, Inspector + Route on right */
+/* Center Workspace Split: Map/Graph on left, Inspector on right */
 .center-workspace-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 340px;
+  grid-template-columns: minmax(0, 1fr) 360px;
   gap: 12px;
   align-items: start;
 }
@@ -2103,6 +2103,23 @@ button, select, input {
   gap: 12px;
 }
 
+/* Master Map Bottom Section: Legend on left, Alerts on right */
+.dashboard-map-bottom-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.map-bottom-legend-col {
+  min-width: 0;
+  display: flex;
+}
+
+.map-bottom-alerts-col {
+  display: flex;
+}
+
 /* Bottom Analytics 3-Column Grid (Strict Equal Height & Alignment) */
 .bottom-analytics-grid {
   display: grid;
@@ -2113,6 +2130,9 @@ button, select, input {
 
 @media (max-width: 1250px) {
   .center-workspace-grid {
+    grid-template-columns: 1fr;
+  }
+  .dashboard-map-bottom-grid {
     grid-template-columns: 1fr;
   }
   .bottom-analytics-grid {
